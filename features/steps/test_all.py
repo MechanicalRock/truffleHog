@@ -9,7 +9,6 @@ from truffleHog import truffleHog
 from unittest.mock import patch, MagicMock
 
 
-
 class TestStringMethods(unittest.TestCase):
     def test_shannon(self):
         random_stringB64 = (
