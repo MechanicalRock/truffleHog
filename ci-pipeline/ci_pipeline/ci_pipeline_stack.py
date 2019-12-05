@@ -21,7 +21,9 @@ class PipelineStack(core.Stack):
         super().__init__(scope, id, **kwargs)
 
         code = codecommit.Repository.from_repository_name(
-            self, "Mechanical Rock GitHub", "https://github.com/MechanicalRock/truffleHog"
+            self,
+            "Mechanical Rock GitHub",
+            "https://github.com/MechanicalRock/truffleHog",
         )
 
         codebuild_test_phase = codebuild.PipelineProject(
@@ -32,9 +34,7 @@ class PipelineStack(core.Stack):
                     version="0.2",
                     phases=dict(
                         install=dict(commands="pip install -r requirements.txt"),
-                        build=dict(
-                            commands=["behave", "pytest"]
-                        ),
+                        build=dict(commands=["behave", "pytest"]),
                     ),
                     environment=dict(
                         buildImage=codebuild.LinuxBuildImage.UBUNTU_14_04_NODEJS_10_14_1
@@ -66,7 +66,7 @@ class PipelineStack(core.Stack):
                             action_name="Run_Tests",
                             project=codebuild_test_phase,
                             input=source_output,
-                        ),
+                        )
                     ],
                 ),
             ],
