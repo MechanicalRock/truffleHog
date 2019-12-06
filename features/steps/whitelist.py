@@ -2,12 +2,22 @@ import os, subprocess
 from git import Repo
 from behave import *
 
-test_repos = dict()
-for repo_directory in os.listdir("features/repository_test_cases/"):
-    test_repos[repo_directory] = (
-        Repo(f"features/repository_test_cases/{repo_directory}/test_repo"), # Repository Object
-        f"features/repository_test_cases/{repo_directory}/test_repo/"        # Repository Path
-    )
+
+def setup_test_repositories():
+    for repo_directory in os.listdir("features/repository_test_cases/"):
+        subprocess.run(f"{repo_directory}.init_repo.sh", check=True)
+    
+    test_repos = dict()
+    for repo_directory in os.listdir("features/repository_test_cases/"):
+        test_repos[repo_directory] = (
+            Repo(
+                f"features/repository_test_cases/{repo_directory}/test_repo"
+            ),  # Repository Object
+            f"features/repository_test_cases/{repo_directory}/test_repo/",  # Repository Path
+        )
+    return test_repos
+
+test_repos = setup_test_repositories()
 
 ## Behaviour - Secret finding
 # Trufflehog finds no secrets if there are no secrets.
@@ -18,7 +28,10 @@ def step_impl(context):
 
 @when("trufflehog scans the repo")
 def step_impl(context):
-    context.trufflehogScan = subprocess.run([f"trufflehog {context.repository[1]}"], shell=True, capture_output=True)
+    context.trufflehogScan = subprocess.run(
+        [f"trufflehog {context.repository[1]}"], shell=True, capture_output=True
+    )
+
 
 @then("Trufflehog should find no secrets")
 def step_impl(context):
@@ -35,6 +48,7 @@ def step_impl(context):
 @then("Trufflehog should find all secrets")
 def step_impl(context):
     assert context.trufflehogScan.results == True
+
 
 @then("Trufflehog should add a record for the new secret")
 def step_impl(context):
@@ -60,45 +74,60 @@ def step_impl(context):
 def step_impl(context):
     assert context.trufflehogScan.returncode == 0
 
-@then(u'Trufflehog should update (if required) the record in the whitelist')
+
+@then("Trufflehog should update (if required) the record in the whitelist")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Then Trufflehog should update (if required) the record in the whitelist')
+    raise NotImplementedError(
+        "STEP: Then Trufflehog should update (if required) the record in the whitelist"
+    )
 
 
-@given(u'An existing secret in the list')
+@given("An existing secret in the list")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Given An existing secret in the list')
+    raise NotImplementedError("STEP: Given An existing secret in the list")
 
 
-@when(u'the secret does not exist in the codebase')
+@when("the secret does not exist in the codebase")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: When the secret does not exist in the codebase')
+    raise NotImplementedError("STEP: When the secret does not exist in the codebase")
 
 
-@then(u'Trufflehog should remove the record')
+@then("Trufflehog should remove the record")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Then Trufflehog should remove the record')
+    raise NotImplementedError("STEP: Then Trufflehog should remove the record")
+
 
 # Trufflehog exit code is 0 on finding only acknowledged/whitelisted secrets.
 
-@given(u'Trufflehog has found secrets, but they\'re all on the whitelist and acknowledged')
+
+@given(
+    "Trufflehog has found secrets, but they're all on the whitelist and acknowledged"
+)
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Given Trufflehog has found secrets, but they\'re all on the whitelist and acknowledged')
+    raise NotImplementedError(
+        "STEP: Given Trufflehog has found secrets, but they're all on the whitelist and acknowledged"
+    )
+
 
 @then("the exit code should be 1")
 def step_impl(context):
     assert context.trufflehogScan.returncode == 1
 
-@when(u'on run Trufflehog on that repository')
+
+@when("on run Trufflehog on that repository")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: When on run Trufflehog on that repository')
+    raise NotImplementedError("STEP: When on run Trufflehog on that repository")
 
 
-@given(u'Theres a secret in the repo, and it\'s not in the whitelist')
+@given("Theres a secret in the repo, and it's not in the whitelist")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Given Theres a secret in the repo, and it\'s not in the whitelist')
+    raise NotImplementedError(
+        "STEP: Given Theres a secret in the repo, and it's not in the whitelist"
+    )
 
 
-@given(u'Theres a secret in the repo, and it\'s in the whitelist')
+@given("Theres a secret in the repo, and it's in the whitelist")
 def step_impl(context):
-    raise NotImplementedError(u'STEP: Given Theres a secret in the repo, and it\'s in the whitelist')
+    raise NotImplementedError(
+        "STEP: Given Theres a secret in the repo, and it's in the whitelist"
+    )
