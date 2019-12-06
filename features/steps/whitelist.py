@@ -5,7 +5,7 @@ from behave import *
 
 def setup_test_repositories():
     for repo_directory in os.listdir("features/repository_test_cases/"):
-        subprocess.run(f"{repo_directory}.init_repo.sh", check=True)
+        subprocess.run(f"features/repository_test_cases/{repo_directory}/init_repo.sh", check=True)
 
     test_repos = dict()
     for repo_directory in os.listdir("features/repository_test_cases/"):
