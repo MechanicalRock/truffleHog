@@ -82,7 +82,7 @@ def main():
         help="Clean up all temporary result files",
     )
     parser.add_argument("git_url", type=str, help="URL for secret searching")
-    parser.set_defaults(regex=False)
+    parser.set_defaults(regex=True)
     parser.set_defaults(rules={})
     parser.set_defaults(max_depth=1000000)
     parser.set_defaults(since_commit=None)

@@ -6,7 +6,7 @@ from behave import *
 def setup_test_repositories():
     for repo_directory in os.listdir("features/repository_test_cases/"):
         subprocess.run(f"{repo_directory}.init_repo.sh", check=True)
-    
+
     test_repos = dict()
     for repo_directory in os.listdir("features/repository_test_cases/"):
         test_repos[repo_directory] = (
@@ -16,6 +16,7 @@ def setup_test_repositories():
             f"features/repository_test_cases/{repo_directory}/test_repo/",  # Repository Path
         )
     return test_repos
+
 
 test_repos = setup_test_repositories()
 
