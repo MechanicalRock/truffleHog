@@ -8,7 +8,9 @@ from truffleHog.whitelist import *
 def setup_test_repositories():
     for repo_directory in os.listdir("features/repository_test_cases/"):
         subprocess.run(
-            f"features/repository_test_cases/{repo_directory}/init_repo.sh", check=True
+            "./init_repo.sh", 
+            check=True,
+            cwd=f"features/repository_test_cases/{repo_directory}"
         )
 
     test_repos = dict()
