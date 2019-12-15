@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="truffleHog",
-    version="2.0.98",
-    description="Searches through git repositories for high entropy strings, digging deep into commit history.",
-    url="https://github.com/dxa4481/truffleHog",
-    author="Dylan Ayrey",
-    author_email="dxa4481@rit.edu",
+    name="MechTruffleHog",
+    version="1",
+    description="Searches through git repositories for high entropy strings and regex patterns. Suitable for local development and pipeline workflows.",
+    url="https://github.com/MechanicalRock/truffleHog",
+    author="Josh Crane",
+    author_email="josh.crane@mechanicalrock.io",
     license="GNU",
     packages=["truffleHog"],
-    install_requires=["GitPython == 2.1.1", "truffleHogRegexes == 0.0.7"],
+    install_requires=["GitPython", "jsons"],
     entry_points={"console_scripts": ["trufflehog = truffleHog.truffleHog:main"]},
 )

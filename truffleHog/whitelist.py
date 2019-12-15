@@ -78,7 +78,7 @@ def read_whitelist_to_memory():
                 in_memory_whitelist.add(WhitelistEntry(**entry))
         return in_memory_whitelist
     except Exception as e:
-        print(f"Error opening whitelist: {e}")
+        print(f"[WARNING] Error opening whitelist: {e}")
         return False
 
 
@@ -94,6 +94,6 @@ def reconcile_secrets(matches, whitelist):
             print(f"Can no longer find {entry.secret_guid}")
             whitelist.remove(entry)
         if entry.acknowledged == True:
-            print(entry)
+            print(f"Already acknowledged: {entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist

@@ -262,4 +262,4 @@ def find_strings(
 
 
 if __name__ == "__main__":
-    cProfile.run("main()", sort="time")
+    main()
