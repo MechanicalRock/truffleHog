@@ -1,6 +1,8 @@
 import os, subprocess
 from git import Repo
 from behave import *
+from truffleHog.truffleHog import *
+from truffleHog.whitelist import *
 
 
 def setup_test_repositories():
@@ -31,31 +33,35 @@ def step_impl(context):
 
 @when("trufflehog scans the repo")
 def step_impl(context):
-    context.trufflehogScan = subprocess.run(
-        [f"trufflehog {context.repository[1]}"], shell=True, capture_output=True
+    context.trufflehogScan = find_strings(
+        context.repository[1], do_entropy=True, do_regex=True
     )
 
 
 @then("Trufflehog should find no secrets")
 def step_impl(context):
-    assert context.trufflehogScan.results == False
-    assert context.trufflehogScan.whitelist == False
+    assert context.trufflehogScan == set()
 
 
 # Trufflehog finds secrets if there are secrets.
 @given("we have a repository with secrets")
 def step_impl(context):
-    context.repository = test_repos["false_and_true_positives_in_commity_history"]
+    context.repository = test_repos["false_and_true_positives_in_commit_history"]
 
 
 @then("Trufflehog should find all secrets")
 def step_impl(context):
-    assert context.trufflehogScan.results == True
+    assert context.trufflehogScan != set()
+    assert ("AKIATHISIS666REALKEY" and "AKIATHISISNOTREALKEY") in str(
+        context.trufflehogScan
+    )
 
 
 @then("Trufflehog should add a record for the new secret")
 def step_impl(context):
-    assert True is False
+    for entry in context.trufflehogScan:
+        add_to_whitelist(entry, context.whitelist)
+    assert context.whitelist != set()
 
 
 ## Behaviour - Whitelist Management
@@ -65,39 +71,59 @@ def step_impl(context):
 # Trufflehog exit code is 0 on finding no secrets.
 @given("Trufflehog has found no secrets")
 def step_impl(context):
-    assert True is False
+    context.output = set()
+    context.whitelist = set()
 
 
 @when("Trufflehog exits")
 def step_impl(context):
-    assert True is False
-
-
-@then("the exit code should be 0")
-def step_impl(context):
-    assert context.trufflehogScan.returncode == 0
-
-
-@then("Trufflehog should update (if required) the record in the whitelist")
-def step_impl(context):
-    raise NotImplementedError(
-        "STEP: Then Trufflehog should update (if required) the record in the whitelist"
+    context.output, context.whitelist = reconcile_secrets(
+        context.output, context.whitelist
     )
+
+
+@then("Trufflehog should not change the whitelist")
+def step_impl(context):
+    whitelist = set()
+    whitelist_comparison = set()
+
+    for entry in context.trufflehogScan:
+        add_to_whitelist(entry, whitelist)
+    assert whitelist != set()
+
+    for entry in context.trufflehogScan:
+        add_to_whitelist(entry, whitelist)
+        add_to_whitelist(entry, whitelist_comparison)
+
+    assert whitelist == whitelist_comparison
 
 
 @given("An existing secret in the list")
 def step_impl(context):
-    raise NotImplementedError("STEP: Given An existing secret in the list")
+    context.whitelist = {
+        WhitelistEntry(
+            acknowledged=False,
+            branch="origin/master",
+            commit="Fake key",
+            commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
+            date="2019-12-06 09:16:54",
+            path="test_file.txt",
+            reason="Amazon AWS Access Key ID",
+            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            stringDetected="AKIATHISISNOTREALKEY",
+        )
+    }
 
 
 @when("the secret does not exist in the codebase")
 def step_impl(context):
-    raise NotImplementedError("STEP: When the secret does not exist in the codebase")
+    context.output = set()
 
 
 @then("Trufflehog should remove the record")
 def step_impl(context):
-    raise NotImplementedError("STEP: Then Trufflehog should remove the record")
+    reconcile_secrets(context.output, context.whitelist)
+    assert context.whitelist == set()
 
 
 # Trufflehog exit code is 0 on finding only acknowledged/whitelisted secrets.
@@ -107,30 +133,74 @@ def step_impl(context):
     "Trufflehog has found secrets, but they're all on the whitelist and acknowledged"
 )
 def step_impl(context):
-    raise NotImplementedError(
-        "STEP: Given Trufflehog has found secrets, but they're all on the whitelist and acknowledged"
+    context.output = context.whitelist = {
+        WhitelistEntry(
+            acknowledged=True,
+            branch="origin/master",
+            commit="Fake key",
+            commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
+            date="2019-12-06 09:16:54",
+            path="test_file.txt",
+            reason="Amazon AWS Access Key ID",
+            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            stringDetected="AKIATHISISNOTREALKEY",
+        )
+    }
+    context.output, context.whitelist = reconcile_secrets(
+        context.output, context.whitelist
     )
+
+
+@given("Trufflehog has found secrets, they are on the whitelist but not acknowledged")
+def step_impl(context):
+    context.output = context.whitelist = {
+        WhitelistEntry(
+            acknowledged=False,
+            branch="origin/master",
+            commit="Fake key",
+            commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
+            date="2019-12-06 09:16:54",
+            path="test_file.txt",
+            reason="Amazon AWS Access Key ID",
+            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            stringDetected="AKIATHISISNOTREALKEY",
+        )
+    }
+    context.output, context.whitelist = reconcile_secrets(
+        context.output, context.whitelist
+    )
+
+
+@then("the exit code should be 0")
+def step_impl(context):
+    try:
+        print(context.output)
+        assert exit_code(context.output) == sys.exit(0)
+    except SystemExit as e:
+        if e.code == 0:
+            pass
+        else:
+            assert False
 
 
 @then("the exit code should be 1")
 def step_impl(context):
-    assert context.trufflehogScan.returncode == 1
-
-
-@when("on run Trufflehog on that repository")
-def step_impl(context):
-    raise NotImplementedError("STEP: When on run Trufflehog on that repository")
+    try:
+        print(context.output)
+        assert exit_code(context.output) == sys.exit(1)
+    except SystemExit as e:
+        if e.code == 1:
+            pass
+        else:
+            assert False
 
 
 @given("Theres a secret in the repo, and it's not in the whitelist")
 def step_impl(context):
-    raise NotImplementedError(
-        "STEP: Given Theres a secret in the repo, and it's not in the whitelist"
-    )
+    context.repository = test_repos["false_and_true_positives_in_commit_history"]
+    context.whitelist = set()
 
 
 @given("Theres a secret in the repo, and it's in the whitelist")
 def step_impl(context):
-    raise NotImplementedError(
-        "STEP: Given Theres a secret in the repo, and it's in the whitelist"
-    )
+    context.repository = test_repos["false_and_true_positives_in_commit_history"]

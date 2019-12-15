@@ -7,7 +7,7 @@ Feature: Automated creation of a whitelist file that is added to a repository. T
 
   Scenario: Trufflehog finds secrets if there are secrets
     Given We have a repository with secrets
-    When  on run Trufflehog on that repository
+    When  trufflehog scans the repo
     Then  Trufflehog should find all secrets
 
   Scenario: Trufflehog adds a secret to the whitelist.
@@ -18,8 +18,8 @@ Feature: Automated creation of a whitelist file that is added to a repository. T
   Scenario: Trufflehog updates a secret on the whitelist.
     Given Theres a secret in the repo, and it's in the whitelist
     When  trufflehog scans the repo
-    Then  Trufflehog should update (if required) the record in the whitelist
-
+    Then  Trufflehog should not change the whitelist
+    
   Scenario: Trufflehog finds a stale secret on the whitelist.
     Given An existing secret in the list
     When  the secret does not exist in the codebase
@@ -36,6 +36,6 @@ Feature: Automated creation of a whitelist file that is added to a repository. T
     Then  the exit code should be 0
 
   Scenario: Trufflehog exit code is 1 on finding secrets
-    Given Trufflehog has found secrets, but they're all on the whitelist and acknowledged
+    Given Trufflehog has found secrets, they are on the whitelist but not acknowledged
     When  Trufflehog exits
     Then  the exit code should be 1
