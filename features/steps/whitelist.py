@@ -9,9 +9,9 @@ def setup_test_repositories():
     root_dir = os.getcwd()
     for repo_directory in os.listdir("features/repository_test_cases/"):
         subprocess.run(
-            "./init_repo.sh", 
+            "./init_repo.sh",
             check=True,
-            cwd=f"features/repository_test_cases/{repo_directory}"
+            cwd=f"features/repository_test_cases/{repo_directory}",
         )
 
     test_repos = dict()

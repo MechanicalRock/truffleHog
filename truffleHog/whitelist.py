@@ -65,7 +65,13 @@ def curate_whitelist(outstanding_secrets):
 def write_whitelist_to_disk(whitelist_object):
     try:
         with open("whitelist.json", "w+") as whitelist:
-            whitelist_object = jsons.dump(sorted(whitelist_object, key=lambda whitelist: whitelist.acknowledged, reverse=False))
+            whitelist_object = jsons.dump(
+                sorted(
+                    whitelist_object,
+                    key=lambda whitelist: whitelist.acknowledged,
+                    reverse=False,
+                )
+            )
             json.dump(whitelist_object, whitelist, indent=4)
     except Exception as e:
         print(f"Unable to write to whitelist: {e}")
@@ -93,9 +99,9 @@ def add_to_whitelist(entry, whitelist):
 def reconcile_secrets(matches, whitelist):
     for entry in whitelist.copy():
         if entry not in matches:
-            #print(f"Can no longer find {entry.secret_guid}")
+            # print(f"Can no longer find {entry.secret_guid}")
             whitelist.remove(entry)
         if entry.acknowledged == True:
-            #print(f"Already acknowledged:\n{entry}. No action required.")
+            # print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist

@@ -17,7 +17,6 @@ from truffleHog.whitelist import WhitelistEntry, curate_whitelist
 from termcolor import colored
 
 
-
 def get_regexes():
     with open(os.path.join(os.path.dirname(__file__), "regexes.json"), "r") as f:
         regexes = json.loads(f.read())
@@ -47,20 +46,33 @@ def main():
     failure_message = None
     for file in repo.untracked_files:
         if file == "whitelist.json":
-            failure_message = colored("The whitelist.json file should be commited to source control!", "yellow")
+            failure_message = colored(
+                "The whitelist.json file should be commited to source control!",
+                "yellow",
+            )
 
     exit_code(outstanding_secrets, failure_message)
 
 
-def exit_code(output,failure_message=None):
+def exit_code(output, failure_message=None):
     if output or failure_message:
         if not failure_message:
-            print(colored("Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them", "red"))
+            print(
+                colored(
+                    "Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
+                    "red",
+                )
+            )
         else:
             print(failure_message)
         sys.exit(1)
     else:
-        print(colored("Detected no secrets! Clear to commit and push to remote repository", "green"))
+        print(
+            colored(
+                "Detected no secrets! Clear to commit whitelist.json and push to remote repository",
+                "green",
+            )
+        )
         sys.exit(0)
 
 
@@ -195,13 +207,14 @@ def diff_worker(
         issues = issues.union(foundIssues)
     return issues
 
+
 def get_repo(repo_path=None, git_url=None):
     if repo_path:
         project_path = repo_path
     else:
         project_path = clone_git_repo(git_url)
     return Repo(project_path)
-    
+
 
 def find_strings(
     git_url,
@@ -214,7 +227,7 @@ def find_strings(
 ):
     output = set()
     already_searched = set()
-    
+
     repo = get_repo(repo_path, git_url)
 
     output_dir = tempfile.mkdtemp()
