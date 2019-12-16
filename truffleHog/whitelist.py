@@ -1,6 +1,7 @@
 import json
 import hashlib
 import jsons
+import termcolor
 
 
 class WhitelistEntry:
@@ -79,7 +80,7 @@ def read_whitelist_to_memory():
                 in_memory_whitelist.add(WhitelistEntry(**entry))
         return in_memory_whitelist
     except Exception as e:
-        print(f"[WARNING] Error opening whitelist: {e}")
+        print(colored(f"[WARNING] Error opening whitelist: {e}", "yellow"))
         return False
 
 
@@ -92,9 +93,9 @@ def add_to_whitelist(entry, whitelist):
 def reconcile_secrets(matches, whitelist):
     for entry in whitelist.copy():
         if entry not in matches:
-            print(f"Can no longer find {entry.secret_guid}")
+            #print(f"Can no longer find {entry.secret_guid}")
             whitelist.remove(entry)
         if entry.acknowledged == True:
-            print(f"Already acknowledged:\n{entry}. No action required.")
+            #print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist

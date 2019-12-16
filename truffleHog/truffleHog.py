@@ -33,23 +33,34 @@ def main():
         description="Find secrets hidden in the depths of git."
     )
 
-    parser.add_argument("git_url", type=str, help="URL for secret searching")
+    parser.add_argument("--git_url", type=str, help="URL for secret searching")
+    parser.add_argument("--repo_path", type=str, help="File path to git project")
 
     args = parser.parse_args()
 
-    outstanding_secrets = find_strings(args.git_url)
+    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
 
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 
-    exit_code(outstanding_secrets)
+    repo = get_repo(repo_path=args.repo_path, git_url=args.git_url)
+
+    failure_message = None
+    for file in repo.untracked_files:
+        if file == "whitelist.json":
+            failure_message = colored("The whitelist.json file should be commited to source control!", "yellow")
+
+    exit_code(outstanding_secrets, failure_message)
 
 
-def exit_code(output):
-    if output:
-        print(colored("Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them", "red"))
+def exit_code(output,failure_message=None):
+    if output or failure_message:
+        if not failure_message:
+            print(colored("Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them", "red"))
+        else:
+            print(failure_message)
         sys.exit(1)
     else:
-        print(colored("Detected no secrets! Clear to push to remote repository", "green"))
+        print(colored("Detected no secrets! Clear to commit and push to remote repository", "green"))
         sys.exit(0)
 
 
@@ -184,6 +195,13 @@ def diff_worker(
         issues = issues.union(foundIssues)
     return issues
 
+def get_repo(repo_path=None, git_url=None):
+    if repo_path:
+        project_path = repo_path
+    else:
+        project_path = clone_git_repo(git_url)
+    return Repo(project_path)
+    
 
 def find_strings(
     git_url,
@@ -196,11 +214,8 @@ def find_strings(
 ):
     output = set()
     already_searched = set()
-    if repo_path:
-        project_path = repo_path
-    else:
-        project_path = clone_git_repo(git_url)
-    repo = Repo(project_path)
+    
+    repo = get_repo(repo_path, git_url)
 
     output_dir = tempfile.mkdtemp()
 
