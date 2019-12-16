@@ -65,7 +65,7 @@ def curate_whitelist(outstanding_secrets):
 def write_whitelist_to_disk(whitelist_object):
     try:
         with open("whitelist.json", "w+") as whitelist:
-            whitelist_object = jsons.dump(whitelist_object)
+            whitelist_object = jsons.dump(sorted(whitelist_object, key=lambda whitelist: whitelist.acknowledged, reverse=False))
             json.dump(whitelist_object, whitelist, indent=4)
     except Exception as e:
         print(f"Unable to write to whitelist: {e}")
