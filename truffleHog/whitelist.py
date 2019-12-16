@@ -1,7 +1,7 @@
 import json
 import hashlib
 import jsons
-import termcolor
+from termcolor import colored
 
 
 class WhitelistEntry:
