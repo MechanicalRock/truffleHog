@@ -117,4 +117,4 @@ optional arguments:
 - ~~A since commit X feature~~
 - ~~Print the file affected~~
 
-AKIAIOSFODNN7EXAMPLE
+AKIAIOSFODNN7EXAMPL2
