@@ -10,5 +10,7 @@ setup(
     license="GNU",
     packages=["truffleHog"],
     install_requires=["GitPython", "jsons", "termcolor"],
+    package_data={"": ["*.json"]},
+    include_package_data=True,
     entry_points={"console_scripts": ["trufflehog = truffleHog.truffleHog:main"]},
 )
