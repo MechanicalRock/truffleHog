@@ -222,8 +222,8 @@ def find_strings(
     max_depth=10000,
     branch=None,
     repo_path=None,
-    do_entropy=False,
-    do_regex=True,
+    do_entropy=True,
+    do_regex=False,
 ):
     output = set()
     already_searched = set()
@@ -270,8 +270,8 @@ def find_strings(
                 prev_commit,
                 branch_name,
                 commitHash,
-                do_regex,
                 do_entropy,
+                do_regex,
             )
 
             output = output.union(foundIssues)
@@ -285,8 +285,8 @@ def find_strings(
             prev_commit,
             branch_name,
             commitHash,
-            do_regex,
             do_entropy,
+            do_regex,
         )
         output = output.union(foundIssues)
     return output

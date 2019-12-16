@@ -9,6 +9,6 @@ setup(
     author_email="josh.crane@mechanicalrock.io",
     license="GNU",
     packages=["truffleHog"],
-    install_requires=["GitPython", "jsons"],
+    install_requires=["GitPython", "jsons", "termcolor"],
     entry_points={"console_scripts": ["trufflehog = truffleHog.truffleHog:main"]},
 )
