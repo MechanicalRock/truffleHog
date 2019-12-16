@@ -14,7 +14,8 @@ import stat
 from git import Repo
 from git import NULL_TREE
 from truffleHog.whitelist import WhitelistEntry, curate_whitelist
-import cProfile
+from termcolor import colored
+
 
 
 def get_regexes():
@@ -45,8 +46,10 @@ def main():
 
 def exit_code(output):
     if output:
+        print(colored("Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them", "red"))
         sys.exit(1)
     else:
+        print(colored("Detected no secrets! Clear to push to remote repository", "green"))
         sys.exit(0)
 
 

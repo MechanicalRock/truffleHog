@@ -34,7 +34,7 @@ class WhitelistEntry:
             )
 
     def __repr__(self):
-        return f"{self.secret_guid} {self.stringDetected}"
+        return f"Secret Instance GUID: {self.secret_guid}, String Detected:{self.stringDetected}"
 
     def __eq__(self, other):
         return self.secret_guid == other.secret_guid
@@ -46,6 +46,7 @@ class WhitelistEntry:
 def curate_whitelist(outstanding_secrets):
     whitelist_in_memory = read_whitelist_to_memory()
     if not whitelist_in_memory:
+        print(f"Creating a new whitelist.json...")
         write_whitelist_to_disk(outstanding_secrets)
     else:
         outstanding_secrets, whitelist_in_memory = reconcile_secrets(
@@ -94,6 +95,6 @@ def reconcile_secrets(matches, whitelist):
             print(f"Can no longer find {entry.secret_guid}")
             whitelist.remove(entry)
         if entry.acknowledged == True:
-            print(f"Already acknowledged: {entry}. No action required.")
+            print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist
