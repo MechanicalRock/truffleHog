@@ -116,3 +116,5 @@ optional arguments:
 - ~~Don't rescan diffs if already looked at in another branch~~
 - ~~A since commit X feature~~
 - ~~Print the file affected~~
+
+AKIAIOSFODNN7EXAMPLE
