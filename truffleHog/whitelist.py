@@ -1,6 +1,7 @@
 import json
 import hashlib
 import jsons
+from collections import Counter
 from termcolor import colored
 
 
@@ -42,6 +43,45 @@ class WhitelistEntry:
 
     def __hash__(self):
         return int(self.secret_guid, 16)
+
+
+class WhitelistStatistics:
+    def __init__(self, whitelist_object):
+        self.whitelist_object = whitelist_object
+    
+    def largest_files(self):
+        largest_files = ""
+        counter = Counter([entry.path for entry in self.whitelist_object])
+        for key, val in counter.most_common(10):
+            largest_files += f"{'  '+key:<35}{val:>7}\n"
+        return largest_files
+
+
+
+    def unique(self, attr):
+        return set([getattr(entry, attr) for entry in self.whitelist_object])
+        
+    def count(self, attr):
+        return len([getattr(entry, attr) for entry in self.whitelist_object])
+
+    def breakdown(self):
+        reason_breakdown = ""
+        for given_reason in self.unique("reason"):
+            reason_breakdown += f"{'  '+given_reason:<35}{len([x for x in self.whitelist_object if x.reason == given_reason]):>7}\n"
+        return reason_breakdown
+
+    def __repr__(self):
+        message = (
+            f"Whitelist Statistics:\n"
+            f"{'  Files: ':<35}{len(self.unique('path')):>7}\n"
+            f"{'  Total Strings: ':<35}{self.count('stringDetected'):>7}\n"
+            f"{'  Unique Strings: ':<35}{len(self.unique('stringDetected')):>7}\n"
+            f"\nCategories:\n"
+            f"{self.breakdown()}"
+            f"\nTop Files:\n"
+            f"{self.largest_files()}\n"
+        )
+        return message
 
 
 def curate_whitelist(outstanding_secrets):
@@ -106,3 +146,13 @@ def reconcile_secrets(matches, whitelist):
             # print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist
+
+
+def whitelist_statistics():
+    in_memory_whitelist = read_whitelist_to_memory()
+    if in_memory_whitelist:
+        unique_secrets = WhitelistStatistics(in_memory_whitelist)
+        return unique_secrets
+
+    else:
+        return False

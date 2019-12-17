@@ -13,11 +13,11 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import WhitelistEntry, curate_whitelist
+from truffleHog.whitelist import WhitelistEntry, curate_whitelist, whitelist_statistics
 from termcolor import colored
 
 
-def get_regexes():
+def _get_regexes():
     with open(os.path.join(os.path.dirname(__file__), "regexes.json"), "r") as f:
         regexes = json.loads(f.read())
 
@@ -27,12 +27,20 @@ def get_regexes():
     return regexes
 
 
-def exclusion_filter(path):
+def _exclusion_filter(path):
     excluded_files = ["whitelist.json"]
     for file_seg in excluded_files:
         if file_seg in path:
             return True
     return False
+
+
+def _get_repo(repo_path=None, git_url=None):
+    if repo_path:
+        project_path = repo_path
+    else:
+        project_path = clone_git_repo(git_url)
+    return Repo(project_path)
 
 
 def main():
@@ -49,7 +57,7 @@ def main():
 
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 
-    repo = get_repo(repo_path=args.repo_path, git_url=args.git_url)
+    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
 
     failure_message = None
     for file in repo.untracked_files:
@@ -59,6 +67,7 @@ def main():
                 "yellow",
             )
 
+    print(colored(whitelist_statistics(), "green"))
     exit_code(outstanding_secrets, failure_message)
 
 
@@ -67,7 +76,7 @@ def exit_code(output, failure_message=None):
         if not failure_message:
             print(
                 colored(
-                    "Secrets detected. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
+                    f"Secrets detected: {len(output)}. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
                     "red",
                 )
             )
@@ -162,7 +171,7 @@ def entropicDiff(
 
 def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, commitHash):
     regex_matches = set()
-    regexes = get_regexes()
+    regexes = _get_regexes()
     for key in regexes:
         found_strings = regexes[key].findall(printableDiff)
 
@@ -193,7 +202,7 @@ def diff_worker(
     issues = set()
     for blob in diff:
         path = blob.b_path if blob.b_path else blob.a_path
-        if exclusion_filter(path):
+        if _exclusion_filter(path):
             continue
         printableDiff = blob.diff.decode("utf-8", errors="replace")
         if printableDiff.startswith("Binary files"):
@@ -220,14 +229,6 @@ def diff_worker(
     return issues
 
 
-def get_repo(repo_path=None, git_url=None):
-    if repo_path:
-        project_path = repo_path
-    else:
-        project_path = clone_git_repo(git_url)
-    return Repo(project_path)
-
-
 def find_strings(
     git_url,
     since_commit=None,
@@ -240,7 +241,7 @@ def find_strings(
     output = set()
     already_searched = set()
 
-    repo = get_repo(repo_path, git_url)
+    repo = _get_repo(repo_path, git_url)
 
     output_dir = tempfile.mkdtemp()
 
