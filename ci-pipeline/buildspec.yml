@@ -17,7 +17,7 @@
         "pip3 install --upgrade pip",
         "pip3 install . --user",
         "echo $PATH",
-        "truffleHog --repo_path ."
+        "build/lib/truffleHog --repo_path ."
       ]
     }
   },
