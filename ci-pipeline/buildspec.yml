@@ -21,7 +21,7 @@
         "pip3 show mechtrufflehog",
         "/usr/local/bin/trufflehog --git_url https://github.com/MechanicalRock/truffleHog || :",
         "python3 setup.py sdist bdist_wheel",
-        "python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u `$PYPI_USERNAME` -p `$PYPIPASSWORD`"
+        "python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u `echo $PYPI_USERNAME` -p `echo $PYPI_PASSWORD`"
       ]
     }
   },
