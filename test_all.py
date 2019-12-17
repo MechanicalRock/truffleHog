@@ -11,7 +11,7 @@ from truffleHog.truffleHog import (
     shannon_entropy,
     BASE64_CHARS,
     HEX_CHARS,
-    clone_git_repo,
+    _clone_git_repo,
 )
 
 
@@ -25,7 +25,7 @@ class TestStringMethods(unittest.TestCase):
         self.assertGreater(shannon_entropy(random_stringHex, HEX_CHARS), 3)
 
     def test_cloning(self):
-        project_path = clone_git_repo("https://github.com/dxa4481/truffleHog.git")
+        project_path = _clone_git_repo("https://github.com/dxa4481/truffleHog.git")
         license_file = os.path.join(project_path, "LICENSE")
         self.assertTrue(os.path.isfile(license_file))
 
@@ -56,22 +56,22 @@ class TestStringMethods(unittest.TestCase):
             cross_validating_commit_w_secret_comment, commit_under_test[-1].commit
         )
 
-    @patch("truffleHog.truffleHog.clone_git_repo")
+    @patch("truffleHog.truffleHog._clone_git_repo")
     @patch("truffleHog.truffleHog.Repo")
     @patch("shutil.rmtree")
-    def test_branch(self, rmtree_mock, repo_const_mock, clone_git_repo):
+    def test_branch(self, rmtree_mock, repo_const_mock, _clone_git_repo):
         repo = MagicMock()
         repo_const_mock.return_value = repo
         find_strings("test_repo", branch="testbranch")
         repo.remotes.origin.fetch.assert_called_once_with("testbranch")
 
-    @patch("truffleHog.truffleHog.clone_git_repo")
+    @patch("truffleHog.truffleHog._clone_git_repo")
     @patch("truffleHog.truffleHog.Repo")
     @patch("shutil.rmtree")
-    def test_repo_path(self, rmtree_mock, repo_const_mock, clone_git_repo):
+    def test_repo_path(self, rmtree_mock, repo_const_mock, _clone_git_repo):
         find_strings("test_repo", repo_path="test/path/")
         rmtree_mock.assert_not_called()
-        clone_git_repo.assert_not_called()
+        _clone_git_repo.assert_not_called()
 
 
 if __name__ == "__main__":
