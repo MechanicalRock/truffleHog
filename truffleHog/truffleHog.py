@@ -13,7 +13,12 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import WhitelistEntry, curate_whitelist, whitelist_statistics,remediate_secrets
+from truffleHog.whitelist import (
+    WhitelistEntry,
+    curate_whitelist,
+    whitelist_statistics,
+    remediate_secrets,
+)
 from termcolor import colored
 
 
@@ -40,70 +45,22 @@ def _get_repo(repo_path=None, git_url=None):
         if repo_path:
             project_path = repo_path
         else:
-            project_path = clone_git_repo(git_url)
+            project_path = _clone_git_repo(git_url)
         return Repo(project_path)
     except Exception as e:
-        print(colored(f"Unable to find a git repository. Are you sure {e} is a valid git repository?", "red"))
-        sys.exit(1)
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Find secrets hidden in the depths of git."
-    )
-
-    parser.add_argument("--git_url", type=str, help="A valid repository URL")
-    parser.add_argument("--repo_path", type=str, help="File path to git project repository")
-    parser.add_argument("--remediate", help="Interactive mode for reconciling secrets", action="store_true")
-    parser.add_argument("--pipeline_mode", help="Flags that secrets should not be output and to run in a pipeline friendly mode.", action="store_true")
-
-    args = parser.parse_args()
-
-    if not (args.repo_path or args.git_url):
-        # If neither arg is supplied run with the cwd as the path
-        args.repo_path = "."
-
-    if args.remediate:
-        remediate_secrets()
-        sys.exit(0)
-
-    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
-
-    outstanding_secrets = curate_whitelist(outstanding_secrets)
-
-    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
-
-    failure_message = None
-    for file in repo.untracked_files:
-        if file == "whitelist.json" and args.pipeline_mode == False:
-            failure_message = colored(
-                "The whitelist.json file should be commited to source control!",
-                "yellow",
-            )
-
-    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
-    exit_code(outstanding_secrets, failure_message)
-
-
-def exit_code(output, failure_message=None):
-    if output or failure_message:
-        if not failure_message:
-            print(
-                colored(
-                    f"Secrets detected: {len(output)}. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
-                    "red",
-                )
-            )
-        else:
-            print(failure_message)
-        sys.exit(1)
-    else:
         print(
             colored(
-                "Detected no secrets! Clear to commit whitelist.json and push to remote repository",
-                "green",
+                f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
+                "red",
             )
         )
-        sys.exit(0)
+        sys.exit(1)
+
+
+def _clone_git_repo(git_url):
+    project_path = tempfile.mkdtemp()
+    Repo.clone_from(git_url, project_path)
+    return project_path
 
 
 BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
@@ -140,12 +97,6 @@ def get_strings_of_set(word, char_set, threshold=20):
     if count > threshold:
         strings.add(letters)
     return strings
-
-
-def clone_git_repo(git_url):
-    project_path = tempfile.mkdtemp()
-    Repo.clone_from(git_url, project_path)
-    return project_path
 
 
 def entropicDiff(
@@ -186,7 +137,7 @@ def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, comm
     regex_matches = set()
     regexes = _get_regexes()
     for key in regexes:
-        found_strings = regexes[key].findall(printableDiff)
+        found_strings = regexes[key].findall(printableDiff, re.MULTILINE)
 
         for string in found_strings:
             regex_matches.add(
@@ -209,8 +160,8 @@ def diff_worker(
     prev_commit,
     branch_name,
     commitHash,
-    do_entropy=False,
-    do_regex=True,
+    do_entropy,
+    do_regex,
 ):
     issues = set()
     for blob in diff:
@@ -218,6 +169,8 @@ def diff_worker(
         if _exclusion_filter(path):
             continue
         printableDiff = blob.diff.decode("utf-8", errors="replace")
+        if "PRIVATE KEY" in printableDiff:
+            print(printableDiff)
         if printableDiff.startswith("Binary files"):
             continue
         commit_time = datetime.datetime.fromtimestamp(
@@ -321,5 +274,92 @@ def find_strings(
     return output
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        description="Find secrets hidden in the depths of git."
+    )
+
+    parser.add_argument("--git_url", type=str, help="A valid repository URL")
+    parser.add_argument(
+        "--repo_path", type=str, help="File path to git project repository"
+    )
+    parser.add_argument(
+        "--remediate",
+        help="Interactive mode for reconciling secrets",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--pipeline_mode",
+        help="Flags that secrets should not be output and to run in a pipeline friendly mode.",
+        action="store_true",
+    )
+
+    args = parser.parse_args()
+
+    if not (args.repo_path or args.git_url):
+        # If neither arg is supplied run with the cwd as the path
+        args.repo_path = "."
+
+    if args.remediate:
+        remediate_secrets()
+        sys.exit(0)
+
+    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
+
+    outstanding_secrets = curate_whitelist(outstanding_secrets)
+
+    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
+
+    failure_message = None
+    for file in repo.untracked_files:
+        if file == "whitelist.json" and args.pipeline_mode == False:
+            failure_message = colored(
+                "The whitelist.json file should be commited to source control!",
+                "yellow",
+            )
+
+    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
+    exit_code(outstanding_secrets, failure_message)
+
+
+def exit_code(output, failure_message=None):
+    if output or failure_message:
+        if not failure_message:
+            print(
+                colored(
+                    f"Secrets detected: {len(output)}. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
+                    "red",
+                )
+            )
+        else:
+            print(failure_message)
+        sys.exit(1)
+    else:
+        print(
+            colored(
+                "Detected no secrets! Clear to commit whitelist.json and push to remote repository",
+                "green",
+            )
+        )
+        sys.exit(0)
+
+
 if __name__ == "__main__":
     main()
+"""
+-----BEGIN RSA PRIVATE KEY-----
+MIICXwIBAAKBgQC5/fGrBlQpLPnLVZ8/yBVqQacAyyodilsaYCFUW1GCjYm0zsyh
+VWxyzK4QlOEG+Z0zShKLMGZuYmdMMArHH+DdYj9T0G+LKkUDtIxYb3MMc0mjw6rd
+KXmXQRLVRasiONoTCFIYyMumPZkGgmu4DKUjxn5zoRt+kRsUzugIvZhmiQIDAQAB
+AoGBAIxJVrdBFsnX+rG761oYeM6kpmqa0zFk4kKKr5kJJ/no+C1ArmgiHqKYb9Jh
++TlhnYjKHiKOZzRrVK7KrdZz3Q7VTny1ZhOqpIuJMdDq5hPhuzkI+pwTEGRcqFls
+v8MtySEt77LdEwxcX3iNX8HvBEJBEcJfzE+NtO0gXHCFv4ABAkEA43zzp7ofE7D3
+/RVtBep2HTcqVCnlKTSh0Sl/dlDUjkuRQhhFjillZkQUBUZ0Yx8OZD/6GHWxabQI
+IXcFHuC2AQJBANFNknolnGSCHaBcJPn3S9hLGIHr6qGJKBSoIh6aetad13Uu14Na
+/DGMRee0HutoaaBJT84XnV+5myvrz11XAIkCQQCmrVyRHgu7D8UDh/lThlB4Y3z+
+IZwoLsoJSJB9jgfPIosRlFsSKD6FSYgpvU91eMHArid+WG1e92ulqWD1GMwBAkEA
+nIFhzx5ClFFLL/bW22cUepakq7mpx8JUiyWx5apjwgli68fr9NfbDn2yY/Cm0iZQ
+HT/UgencjpCuPChm9Yex6QJBAKSKm8LxrgWhhB1fwivaZt7yYE30KgB4RsNI2+GK
+Ypvejb+HkTvMv9/Nmpp0VKbPv64HlJXU20KvcsUtjmjePlM=
+-----END RSA PRIVATE KEY-----
+"""
