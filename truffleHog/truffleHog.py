@@ -155,13 +155,7 @@ def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, comm
 
 
 def diff_worker(
-    diff,
-    curr_commit,
-    prev_commit,
-    branch_name,
-    commitHash,
-    do_entropy,
-    do_regex,
+    diff, curr_commit, prev_commit, branch_name, commitHash, do_entropy, do_regex
 ):
     issues = set()
     for blob in diff:
@@ -169,8 +163,6 @@ def diff_worker(
         if _exclusion_filter(path):
             continue
         printableDiff = blob.diff.decode("utf-8", errors="replace")
-        if "PRIVATE KEY" in printableDiff:
-            print(printableDiff)
         if printableDiff.startswith("Binary files"):
             continue
         commit_time = datetime.datetime.fromtimestamp(
@@ -346,20 +338,3 @@ def exit_code(output, failure_message=None):
 
 if __name__ == "__main__":
     main()
-"""
------BEGIN RSA PRIVATE KEY-----
-MIICXwIBAAKBgQC5/fGrBlQpLPnLVZ8/yBVqQacAyyodilsaYCFUW1GCjYm0zsyh
-VWxyzK4QlOEG+Z0zShKLMGZuYmdMMArHH+DdYj9T0G+LKkUDtIxYb3MMc0mjw6rd
-KXmXQRLVRasiONoTCFIYyMumPZkGgmu4DKUjxn5zoRt+kRsUzugIvZhmiQIDAQAB
-AoGBAIxJVrdBFsnX+rG761oYeM6kpmqa0zFk4kKKr5kJJ/no+C1ArmgiHqKYb9Jh
-+TlhnYjKHiKOZzRrVK7KrdZz3Q7VTny1ZhOqpIuJMdDq5hPhuzkI+pwTEGRcqFls
-v8MtySEt77LdEwxcX3iNX8HvBEJBEcJfzE+NtO0gXHCFv4ABAkEA43zzp7ofE7D3
-/RVtBep2HTcqVCnlKTSh0Sl/dlDUjkuRQhhFjillZkQUBUZ0Yx8OZD/6GHWxabQI
-IXcFHuC2AQJBANFNknolnGSCHaBcJPn3S9hLGIHr6qGJKBSoIh6aetad13Uu14Na
-/DGMRee0HutoaaBJT84XnV+5myvrz11XAIkCQQCmrVyRHgu7D8UDh/lThlB4Y3z+
-IZwoLsoJSJB9jgfPIosRlFsSKD6FSYgpvU91eMHArid+WG1e92ulqWD1GMwBAkEA
-nIFhzx5ClFFLL/bW22cUepakq7mpx8JUiyWx5apjwgli68fr9NfbDn2yY/Cm0iZQ
-HT/UgencjpCuPChm9Yex6QJBAKSKm8LxrgWhhB1fwivaZt7yYE30KgB4RsNI2+GK
-Ypvejb+HkTvMv9/Nmpp0VKbPv64HlJXU20KvcsUtjmjePlM=
------END RSA PRIVATE KEY-----
-"""

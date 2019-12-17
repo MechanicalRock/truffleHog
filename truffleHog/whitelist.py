@@ -24,7 +24,7 @@ class WhitelistEntry:
         self.date = date
         self.path = path
         self.reason = reason
-        self.stringDetected = stringDetected
+        self.stringDetected = stringDetected.lstrip("+-")
         self.acknowledged = acknowledged
 
         self.secret_guid = secret_guid
@@ -47,7 +47,10 @@ class WhitelistEntry:
 
 class WhitelistStatistics:
     def __init__(self, whitelist_object, pipeline_mode):
-        self.whitelist_object = {entry for entry in whitelist_object if entry.acknowledged == False}
+        self.whitelist_object = {
+            entry for entry in whitelist_object if entry.acknowledged == False
+        }
+
         self.pipeline_mode = pipeline_mode
 
     def top_secrets(self):
@@ -62,6 +65,7 @@ class WhitelistStatistics:
     def largest_files(self):
         largest_files = ""
         counter = Counter([entry.path for entry in self.whitelist_object])
+
         for key, val in counter.most_common(10):
             largest_files += f"{'  '+key:<35}{val:>7}\n"
         return largest_files
@@ -157,19 +161,27 @@ def reconcile_secrets(matches, whitelist):
             matches.remove(entry)
     return matches, whitelist
 
+
 def remediate_secrets():
     in_memory_whitelist = read_whitelist_to_memory()
     if in_memory_whitelist:
-        counter = Counter([entry.stringDetected for entry in in_memory_whitelist if entry.acknowledged == False])
+        counter = Counter(
+            [
+                entry.stringDetected
+                for entry in in_memory_whitelist
+                if entry.acknowledged == False
+            ]
+        )
         for secret in counter:
-            if "PRIVATE KEY" in secret:
-                #We can't automatically reconcile private keys
-                continue
+            # if "PRIVATE KEY" in secret:
+            #     # We can't automatically reconcile private keys
+            #     continue
             classification = user_classify_secrets(secret)
             update_secret(secret, classification, in_memory_whitelist)
         write_whitelist_to_disk(in_memory_whitelist)
     else:
         return False
+
 
 def user_classify_secrets(secret):
     secret = colored(secret, "yellow")
@@ -181,10 +193,12 @@ def user_classify_secrets(secret):
         if prompt == "n":
             return False
 
+
 def update_secret(secret, classification, whitelist):
     for entry in whitelist:
         if entry.stringDetected == secret:
             entry.acknowledged = classification
+
 
 def whitelist_statistics(pipeline_mode=False):
     in_memory_whitelist = read_whitelist_to_memory()
@@ -194,4 +208,3 @@ def whitelist_statistics(pipeline_mode=False):
 
     else:
         return False
-
