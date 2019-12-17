@@ -14,7 +14,7 @@
         "pytest",
         "python3 setup.py build",
         "pip3 install --upgrade pip",
-        "pip3 install .",
+        "pip3 install . --user",
         "truffleHog --repo_path ."
       ]
     }
