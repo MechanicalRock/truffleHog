@@ -19,7 +19,7 @@
         "pip3 show mechtrufflehog",
         "ls -la /usr/local/lib/python3.7/site-packages/truffleHog",
         "ls -la /usr/local/lib/python3.7/site-packages/",
-        "chmod a+x /usr/local/lib/python3.7/site-packages/truffleHog",
+        "sudo find / -iname trufflehog",
         "/usr/local/lib/python3.7/site-packages/truffleHog --repo_path ."
       ]
     }
