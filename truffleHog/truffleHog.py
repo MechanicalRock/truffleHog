@@ -28,7 +28,7 @@ def _get_regexes():
 
 
 def _exclusion_filter(path):
-    excluded_files = ["whitelist.json"]
+    excluded_files = ["whitelist.json", "package-lock.json"]
     for file_seg in excluded_files:
         if file_seg in path:
             return True

@@ -48,7 +48,14 @@ class WhitelistEntry:
 class WhitelistStatistics:
     def __init__(self, whitelist_object):
         self.whitelist_object = whitelist_object
-    
+
+    def top_secrets(self):
+        counter = Counter([entry.stringDetected for entry in self.whitelist_object])
+        top_secrets = ""
+        for key, val in counter.most_common(10):
+            top_secrets += f"{'  '+key:<35}{val:>7}\n"
+        return top_secrets
+
     def largest_files(self):
         largest_files = ""
         counter = Counter([entry.path for entry in self.whitelist_object])
@@ -56,11 +63,9 @@ class WhitelistStatistics:
             largest_files += f"{'  '+key:<35}{val:>7}\n"
         return largest_files
 
-
-
     def unique(self, attr):
         return set([getattr(entry, attr) for entry in self.whitelist_object])
-        
+
     def count(self, attr):
         return len([getattr(entry, attr) for entry in self.whitelist_object])
 
@@ -80,6 +85,8 @@ class WhitelistStatistics:
             f"{self.breakdown()}"
             f"\nTop Files:\n"
             f"{self.largest_files()}\n"
+            f"\nMost Common Secrets:\n"
+            f"{self.top_secrets()}\n"
         )
         return message
 
