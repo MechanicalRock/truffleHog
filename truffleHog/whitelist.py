@@ -101,6 +101,7 @@ def reconcile_secrets(matches, whitelist):
         if entry not in matches:
             # print(f"Can no longer find {entry.secret_guid}")
             whitelist.remove(entry)
+            continue
         if entry.acknowledged == True:
             # print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)

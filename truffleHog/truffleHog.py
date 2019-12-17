@@ -27,6 +27,14 @@ def get_regexes():
     return regexes
 
 
+def exclusion_filter(path):
+    excluded_files = ["whitelist.json"]
+    for file_seg in excluded_files:
+        if file_seg in path:
+            return True
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Find secrets hidden in the depths of git."
@@ -119,7 +127,7 @@ def clone_git_repo(git_url):
 
 
 def entropicDiff(
-    printableDiff, commit_time, branch_name, prev_commit, blob, commitHash
+    printableDiff, commit_time, branch_name, prev_commit, path, commitHash
 ):
     entropicFindings = set()
     stringsFound = set()
@@ -143,15 +151,16 @@ def entropicDiff(
                 commit=prev_commit.message.replace("\n", ""),
                 commitHash=prev_commit.hexsha,
                 date=commit_time,
-                path=blob.b_path if blob.b_path else blob.a_path,
+                path=path,
                 reason="High Entropy",
                 stringDetected=string,
             )
         )
+
     return entropicFindings
 
 
-def regex_check(printableDiff, commit_time, branch_name, prev_commit, blob, commitHash):
+def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, commitHash):
     regex_matches = set()
     regexes = get_regexes()
     for key in regexes:
@@ -164,7 +173,7 @@ def regex_check(printableDiff, commit_time, branch_name, prev_commit, blob, comm
                     commit=prev_commit.message.replace("\n", ""),
                     commitHash=prev_commit.hexsha,
                     date=commit_time,
-                    path=blob.b_path if blob.b_path else blob.a_path,
+                    path=path,
                     reason=key,
                     stringDetected=string,
                 )
@@ -183,6 +192,9 @@ def diff_worker(
 ):
     issues = set()
     for blob in diff:
+        path = blob.b_path if blob.b_path else blob.a_path
+        if exclusion_filter(path):
+            continue
         printableDiff = blob.diff.decode("utf-8", errors="replace")
         if printableDiff.startswith("Binary files"):
             continue
@@ -193,14 +205,14 @@ def diff_worker(
         foundIssues = set()
         if do_entropy:
             entropic_results = entropicDiff(
-                printableDiff, commit_time, branch_name, prev_commit, blob, commitHash
+                printableDiff, commit_time, branch_name, prev_commit, path, commitHash
             )
             if entropicDiff:
                 issues = issues.union(entropic_results)
 
         if do_regex:
             found_regexes = regex_check(
-                printableDiff, commit_time, branch_name, prev_commit, blob, commitHash
+                printableDiff, commit_time, branch_name, prev_commit, path, commitHash
             )
             issues = issues.union(found_regexes)
 
@@ -223,7 +235,7 @@ def find_strings(
     branch=None,
     repo_path=None,
     do_entropy=True,
-    do_regex=False,
+    do_regex=True,
 ):
     output = set()
     already_searched = set()
@@ -237,9 +249,12 @@ def find_strings(
     else:
         branches = repo.remotes.origin.fetch()
 
-    for remote_branch in branches:
+    for branch in repo.branches:
+        branches.append(branch)
+
+    for branch in branches:
         since_commit_reached = False
-        branch_name = remote_branch.name
+        branch_name = branch.name
         prev_commit = None
         for curr_commit in repo.iter_commits(branch_name, max_count=max_depth):
             commitHash = curr_commit.hexsha
