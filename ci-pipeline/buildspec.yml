@@ -16,7 +16,7 @@
         "python3 setup.py build",
         "pip3 install --upgrade pip",
         "pip3 install . --user",
-        "chmod u+x build/lib/truffleHog",
+        "pip3 show truffleHog",
         "build/lib/truffleHog --repo_path ."
       ]
     }
