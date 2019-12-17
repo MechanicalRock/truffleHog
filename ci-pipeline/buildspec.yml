@@ -17,7 +17,7 @@
         "pip3 install --upgrade pip",
         "pip3 install . -vvvvv",
         "pip3 show mechtrufflehog",
-        "build/lib/truffleHog --repo_path ."
+        "/usr/local/lib/python3.7/site-packages/bin/truffleHog --repo_path ."
       ]
     }
   },
