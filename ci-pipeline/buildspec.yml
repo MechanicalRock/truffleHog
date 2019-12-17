@@ -16,7 +16,7 @@
         "python3 setup.py build",
         "pip3 install --upgrade pip",
         "pip3 install . -vvvvv",
-        "pip3 show truffleHog",
+        "pip3 show mechtrufflehog",
         "build/lib/truffleHog --repo_path ."
       ]
     }
