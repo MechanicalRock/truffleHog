@@ -18,7 +18,7 @@
         "pip3 install . -vvvvv",
         "pip3 show mechtrufflehog",
         "ls -la /usr/local/bin",
-        "/usr/local/bin/trufflehog --repo_path ."
+        "/usr/local/bin/trufflehog --git_url https://github.com/MechanicalRock/truffleHog"
       ]
     }
   },
