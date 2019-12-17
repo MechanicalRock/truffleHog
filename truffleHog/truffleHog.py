@@ -36,12 +36,15 @@ def _exclusion_filter(path):
 
 
 def _get_repo(repo_path=None, git_url=None):
-    if repo_path:
-        project_path = repo_path
-    else:
-        project_path = clone_git_repo(git_url)
-    return Repo(project_path)
-
+    try:
+        if repo_path:
+            project_path = repo_path
+        else:
+            project_path = clone_git_repo(git_url)
+        return Repo(project_path)
+    except Exception as e:
+        print(colored(f"Unable to find a git repository. Are you sure {e} is a valid git repository?", "red"))
+        sys.exit(1)
 
 def main():
     parser = argparse.ArgumentParser(
