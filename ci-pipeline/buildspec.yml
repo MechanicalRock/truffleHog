@@ -1,0 +1,30 @@
+{
+  "version": "0.2",
+  "phases": {
+    "install": {
+      "commands": [
+          "pip install -r requirements.txt",
+          "git config --global user.email josh.crane@mechanicalrock.io",
+          "git config --global user.name JoshCrane" 
+          ]
+    },
+    "build": {
+      "commands": [
+        "behave",
+        "pytest",
+        "python3 setup.py build",
+        "pip3 install --upgrade pip3"
+        "pip3 install .",
+        "truffleHog --repo_path ."
+      ]
+    }
+  },
+  "environment": {
+    "buildImage": {
+      "type": "LINUX_CONTAINER",
+      "defaultComputeType": "BUILD_GENERAL1_SMALL",
+      "imageId": "aws/codebuild/nodejs:10.14.1",
+      "imagePullPrincipalType": "CODEBUILD"
+    }
+  }
+}
