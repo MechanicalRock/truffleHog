@@ -48,14 +48,17 @@ def main():
         description="Find secrets hidden in the depths of git."
     )
 
-    parser.add_argument("--git_url", type=str, help="URL for secret searching")
-    parser.add_argument("--repo_path", type=str, help="File path to git project")
+    parser.add_argument("--git_url", type=str, help="A valid repository URL")
+    parser.add_argument("--repo_path", type=str, help="File path to git project repository")
     parser.add_argument("--remediate", help="Interactive mode for reconciling secrets", action="store_true")
 
     args = parser.parse_args()
 
+    if not (args.repo_path or args.git_url):
+        # If neither arg is supplied run with the cwd as the path
+        args.repo_path = "."
+
     if args.remediate:
-        print("We remediating!")
         remediate_secrets()
 
         sys.exit(0)
