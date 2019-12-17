@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="MechTruffleHog",
-    version="1",
+    version="1.0.0",
     description="Searches through git repositories for high entropy strings and regex patterns. Suitable for local development and pipeline workflows.",
     url="https://github.com/MechanicalRock/truffleHog",
     author="Josh Crane",
@@ -12,5 +12,5 @@ setup(
     install_requires=["GitPython", "jsons", "termcolor"],
     package_data={"": ["*.json"]},
     include_package_data=True,
-    entry_points={"console_scripts": ["trufflehog = truffleHog.truffleHog:main"]},
+    entry_points={"console_scripts": ["mechtrufflehog = truffleHog.truffleHog:main"]},
 )
