@@ -47,7 +47,7 @@ class WhitelistEntry:
 
 class WhitelistStatistics:
     def __init__(self, whitelist_object):
-        self.whitelist_object = whitelist_object
+        self.whitelist_object = {entry for entry in whitelist_object if entry.acknowledged == False}
 
     def top_secrets(self):
         counter = Counter([entry.stringDetected for entry in self.whitelist_object])
@@ -154,6 +154,34 @@ def reconcile_secrets(matches, whitelist):
             matches.remove(entry)
     return matches, whitelist
 
+def remediate_secrets():
+    in_memory_whitelist = read_whitelist_to_memory()
+    if in_memory_whitelist:
+        counter = Counter([entry.stringDetected for entry in in_memory_whitelist if entry.acknowledged == False])
+        for secret in counter:
+            if "PRIVATE KEY" in secret:
+                #We can't automatically reconcile private keys
+                continue
+            classification = user_classify_secrets(secret)
+            update_secret(secret, classification, in_memory_whitelist)
+        write_whitelist_to_disk(in_memory_whitelist)
+    else:
+        return False
+
+def user_classify_secrets(secret):
+    secret = colored(secret, "yellow")
+    while True:
+        print()
+        prompt = input(f"{secret}: False Positive? (y/n)> ")
+        if prompt == "y":
+            return True
+        if prompt == "n":
+            return False
+
+def update_secret(secret, classification, whitelist):
+    for entry in whitelist:
+        if entry.stringDetected == secret:
+            entry.acknowledged = classification
 
 def whitelist_statistics():
     in_memory_whitelist = read_whitelist_to_memory()
@@ -163,3 +191,4 @@ def whitelist_statistics():
 
     else:
         return False
+

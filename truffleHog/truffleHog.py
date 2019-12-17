@@ -13,7 +13,7 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import WhitelistEntry, curate_whitelist, whitelist_statistics
+from truffleHog.whitelist import WhitelistEntry, curate_whitelist, whitelist_statistics,remediate_secrets
 from termcolor import colored
 
 
@@ -50,8 +50,15 @@ def main():
 
     parser.add_argument("--git_url", type=str, help="URL for secret searching")
     parser.add_argument("--repo_path", type=str, help="File path to git project")
+    parser.add_argument("--remediate", help="Interactive mode for reconciling secrets", action="store_true")
 
     args = parser.parse_args()
+
+    if args.remediate:
+        print("We remediating!")
+        remediate_secrets()
+
+        sys.exit(0)
 
     outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
 
