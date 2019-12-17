@@ -46,10 +46,13 @@ class WhitelistEntry:
 
 
 class WhitelistStatistics:
-    def __init__(self, whitelist_object):
+    def __init__(self, whitelist_object, pipeline_mode):
         self.whitelist_object = {entry for entry in whitelist_object if entry.acknowledged == False}
+        self.pipeline_mode = pipeline_mode
 
     def top_secrets(self):
+        if self.pipeline_mode == True:
+            return "Secrets unavailable in pipeline mode."
         counter = Counter([entry.stringDetected for entry in self.whitelist_object])
         top_secrets = ""
         for key, val in counter.most_common(10):
@@ -183,10 +186,10 @@ def update_secret(secret, classification, whitelist):
         if entry.stringDetected == secret:
             entry.acknowledged = classification
 
-def whitelist_statistics():
+def whitelist_statistics(pipeline_mode=False):
     in_memory_whitelist = read_whitelist_to_memory()
     if in_memory_whitelist:
-        unique_secrets = WhitelistStatistics(in_memory_whitelist)
+        unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
         return unique_secrets
 
     else:

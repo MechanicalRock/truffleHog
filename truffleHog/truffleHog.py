@@ -51,6 +51,7 @@ def main():
     parser.add_argument("--git_url", type=str, help="A valid repository URL")
     parser.add_argument("--repo_path", type=str, help="File path to git project repository")
     parser.add_argument("--remediate", help="Interactive mode for reconciling secrets", action="store_true")
+    parser.add_argument("--pipeline_mode", help="Flags that secrets should not be output and to run in a pipeline friendly mode.", action="store_true")
 
     args = parser.parse_args()
 
@@ -60,7 +61,6 @@ def main():
 
     if args.remediate:
         remediate_secrets()
-
         sys.exit(0)
 
     outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
@@ -71,13 +71,13 @@ def main():
 
     failure_message = None
     for file in repo.untracked_files:
-        if file == "whitelist.json":
+        if file == "whitelist.json" and args.pipeline_mode == False:
             failure_message = colored(
                 "The whitelist.json file should be commited to source control!",
                 "yellow",
             )
 
-    print(colored(whitelist_statistics(), "green"))
+    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
     exit_code(outstanding_secrets, failure_message)
 
 
