@@ -1,0 +1,36 @@
+{
+  "version": "0.2",
+  "phases": {
+    "install": {
+      "commands": [
+          "pip3 install --upgrade pip",
+          "python3 -m pip install --user --upgrade setuptools wheel",
+          "python3 -m pip install --upgrade twine",
+          "pip install -r requirements.txt",
+          "git config --global user.email josh.crane@mechanicalrock.io",
+          "git config --global user.name JoshCrane" 
+          ]
+    },
+    "build": {
+      "commands": [
+        "behave",
+        "pytest",
+        "python3 setup.py build",
+        "pip3 install --upgrade pip",
+        "pip3 install .",
+        "pip3 show mechtrufflehog",
+        "/usr/local/bin/trufflehog --git_url https://github.com/MechanicalRock/truffleHog || :",
+        "python3 setup.py sdist bdist_wheel",
+        "python3 -m twine upload --repository-url https://pypi.org/legacy/ dist/* -u `echo $PYPI_USERNAME` -p `echo $PYPI_PASSWORD`"
+      ]
+    }
+  },
+  "environment": {
+    "buildImage": {
+      "type": "LINUX_CONTAINER",
+      "defaultComputeType": "BUILD_GENERAL1_SMALL",
+      "imageId": "aws/codebuild/nodejs:10.14.1",
+      "imagePullPrincipalType": "CODEBUILD"
+    }
+  }
+}
