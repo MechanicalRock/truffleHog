@@ -311,6 +311,7 @@ def main():
             )
     
     if args.pipeline_mode:
+        print(f"Pipeline Mode Activated")
         if args.git_url:
             print(f"Results for {args.git_url}")
         if args.repo_path:
