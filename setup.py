@@ -11,7 +11,7 @@ setup(
     author_email="josh.crane@mechanicalrock.io",
     license="GNU",
     packages=["truffleHog"],
-    install_requires=["GitPython", "jsons", "termcolor"],
+    install_requires=["GitPython", "jsons", "termcolor", "colorama"],
     package_data={"": ["*.json"]},
     include_package_data=True,
     entry_points={"console_scripts": ["mechtrufflehog = truffleHog.truffleHog:main"]},

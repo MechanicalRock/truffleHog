@@ -3,6 +3,9 @@ import hashlib
 import jsons
 from collections import Counter
 from termcolor import colored
+import colorama
+
+colorama.init()
 
 
 class WhitelistEntry:
