@@ -309,8 +309,18 @@ def main():
                 "The whitelist.json file should be commited to source control!",
                 "yellow",
             )
-
-    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
+    
+    if args.pipeline_mode:
+        if args.git_url:
+            print(f"Results for {args.git_url}")
+        if args.repo_path:
+            print(f"Results for {args.repo_path}")
+        
+        # Disable terminal color codes in the pipeline if in pipeline mode
+        print(whitelist_statistics(args.pipeline_mode))
+    else:
+        print(colored(whitelist_statistics(args.pipeline_mode), "green"))
+    
     exit_code(outstanding_secrets, failure_message)
 
 
