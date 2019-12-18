@@ -20,6 +20,9 @@ from truffleHog.whitelist import (
     remediate_secrets,
 )
 from termcolor import colored
+import colorama
+
+colorama.init()
 
 
 def _get_regexes():
@@ -46,6 +49,7 @@ def _get_repo(repo_path=None, git_url=None):
             project_path = repo_path
         else:
             project_path = _clone_git_repo(git_url)
+        print(f"Working with project path {project_path}")
         return Repo(project_path)
     except Exception as e:
         print(
@@ -301,7 +305,7 @@ def main():
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
-
+    
     failure_message = None
     for file in repo.untracked_files:
         if file == "whitelist.json" and args.pipeline_mode == False:
@@ -312,10 +316,7 @@ def main():
     
     if args.pipeline_mode:
         print(f"Pipeline Mode Activated")
-        if args.git_url:
-            print(f"Results for {args.git_url}")
-        if args.repo_path:
-            print(f"Results for {args.repo_path}")
+
         
         # Disable terminal color codes in the pipeline if in pipeline mode
         print(whitelist_statistics(args.pipeline_mode))
