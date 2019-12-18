@@ -22,7 +22,9 @@ from truffleHog.whitelist import (
 from termcolor import colored
 
 import colorama
-colorama.init() # Color for our windows comrades
+
+colorama.init()  # Color for our windows comrades
+
 
 def _get_regexes():
     with open(os.path.join(os.path.dirname(__file__), "regexes.json"), "r") as f:
@@ -48,7 +50,6 @@ def _get_repo(repo_path=None, git_url=None):
             project_path = repo_path
         else:
             project_path = _clone_git_repo(git_url)
-        print(f"Working with project path {project_path}")
         return Repo(project_path)
     except Exception as e:
         print(
@@ -304,24 +305,31 @@ def main():
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
-    
+    if not args.pipeline_mode:
+        print(f"Working with project path {repo.git_dir}")
+
+    if args.pipeline_mode:
+        # Disable terminal color codes in the pipeline if in pipeline mode
+        statistics = whitelist_statistics(args.pipeline_mode)
+        if statistics == False:
+            results = json.dumps({repo.git_dir: "No results", "status": "PASS"})
+            print(results)
+            sys.exit(0)
+        else:
+            results = json.dumps({repo.git_dir: statistics.to_dict(), "status": "FAIL"})
+            print(results)
+            sys.exit(1)
+
     failure_message = None
     for file in repo.untracked_files:
-        if file == "whitelist.json" and args.pipeline_mode == False:
+        if file == "whitelist.json":
             failure_message = colored(
                 "The whitelist.json file should be commited to source control!",
                 "yellow",
             )
-    
-    if args.pipeline_mode:
-        print(f"Pipeline Mode Activated")
 
-        
-        # Disable terminal color codes in the pipeline if in pipeline mode
-        print(whitelist_statistics(args.pipeline_mode))
-    else:
-        print(colored(whitelist_statistics(args.pipeline_mode), "green"))
-    
+    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
+
     exit_code(outstanding_secrets, failure_message)
 
 
