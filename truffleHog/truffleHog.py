@@ -20,10 +20,9 @@ from truffleHog.whitelist import (
     remediate_secrets,
 )
 from termcolor import colored
+
 import colorama
-
-colorama.init()
-
+colorama.init() # Color for our windows comrades
 
 def _get_regexes():
     with open(os.path.join(os.path.dirname(__file__), "regexes.json"), "r") as f:
