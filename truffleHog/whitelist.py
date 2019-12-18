@@ -91,7 +91,7 @@ class WhitelistStatistics:
             "Total Strings": self.count("stringDetected"),
             "Unique Strings": len(self.unique("stringDetected")),
             "Catagories": " ".join(self.breakdown().replace("\n", ",").split()),
-            "Top Files": "".join(self.largest_files().replace("\n", ",").split()),
+            "Top Files": "".join(self.largest_files().replace("\n", ", ").split()),
         }
 
     def __repr__(self):
@@ -152,7 +152,7 @@ def read_whitelist_to_memory():
                 in_memory_whitelist.add(WhitelistEntry(**entry))
         return in_memory_whitelist
     except Exception as e:
-        print(colored(f"Whitelist not found opening whitelist: {e}", "yellow"))
+        print("Whitelist not found")
         return False
 
 
