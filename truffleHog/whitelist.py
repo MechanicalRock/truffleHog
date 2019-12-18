@@ -85,6 +85,15 @@ class WhitelistStatistics:
             reason_breakdown += f"{'  '+given_reason:<35}{len([x for x in self.whitelist_object if x.reason == given_reason]):>7}\n"
         return reason_breakdown
 
+    def to_dict(self):
+        return {
+            "Files": len(self.unique("path")),
+            "Total Strings": self.count("stringDetected"),
+            "Unique Strings": len(self.unique("stringDetected")),
+            "Catagories": " ".join(self.breakdown().replace("\n", ",").split()),
+            "Top Files": "".join(self.largest_files().replace("\n", ",").split()),
+        }
+
     def __repr__(self):
         message = (
             f"Whitelist Statistics:\n"
@@ -208,6 +217,5 @@ def whitelist_statistics(pipeline_mode=False):
     if in_memory_whitelist:
         unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
         return unique_secrets
-
     else:
         return False
