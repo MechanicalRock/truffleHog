@@ -152,7 +152,7 @@ def read_whitelist_to_memory():
                 in_memory_whitelist.add(WhitelistEntry(**entry))
         return in_memory_whitelist
     except Exception as e:
-        print(colored(f"[WARNING] Error opening whitelist: {e}", "yellow"))
+        print(colored(f"Whitelist not found opening whitelist: {e}", "yellow"))
         return False
 
 
