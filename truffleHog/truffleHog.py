@@ -312,11 +312,11 @@ def main():
         # Disable terminal color codes in the pipeline if in pipeline mode
         statistics = whitelist_statistics(args.pipeline_mode)
         if statistics == False:
-            results = json.dumps({repo.git_dir: "No results", "status": "PASS"}, whitesoace=4)
+            results = json.dumps({repo.git_dir: "No results", "status": "PASS"}, indent=4)
             print(results)
             sys.exit(0)
         else:
-            results = json.dumps({repo.git_dir: statistics.to_dict(), "status": "FAIL"}, whitespace=4)
+            results = json.dumps({repo.git_dir: statistics.to_dict(), "status": "FAIL"}, indent=4)
             print(results)
             sys.exit(1)
 
