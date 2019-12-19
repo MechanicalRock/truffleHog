@@ -206,14 +206,12 @@ def find_strings(
     repo = _get_repo(repo_path, git_url)
 
     output_dir = tempfile.mkdtemp()
-    branches = list()
     try:
-        if branch:
-            branches.append(repo.remotes.origin.fetch(branch))
-        else:
-            branches.append(repo.remotes.origin.fetch())
+        branches = repo.remotes.origin.fetch()
     except Exception as e:
+        branches = repo.remotes
         print(f"Unable to grab remotes: Reason={e}")
+
 
     for branch in repo.branches:
         branches.append(branch)
