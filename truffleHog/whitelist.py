@@ -90,8 +90,8 @@ class WhitelistStatistics:
             "Files": len(self.unique("path")),
             "Total Strings": self.count("stringDetected"),
             "Unique Strings": len(self.unique("stringDetected")),
-            "Catagories": " ".join(self.breakdown().replace("\n", ",").split()),
-            "Top Files": "".join(self.largest_files().replace("\n", ", ").split()),
+            "Categories": " ".join(self.breakdown().replace("\n", ",").split()),
+            "Top Files": " ".join(self.largest_files().replace("\n", ",").split()),
         }
 
     def __repr__(self):
