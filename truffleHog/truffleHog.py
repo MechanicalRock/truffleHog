@@ -213,6 +213,7 @@ def find_strings(
             branches = repo.remotes.origin.fetch()
     except Exception as e:
         print(f"Unable to grab remotes: Reason={e}")
+        branches = list()
 
     for branch in repo.branches:
         branches.append(branch)
