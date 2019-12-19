@@ -59,15 +59,6 @@ class TestStringMethods(unittest.TestCase):
     @patch("truffleHog.truffleHog._clone_git_repo")
     @patch("truffleHog.truffleHog.Repo")
     @patch("shutil.rmtree")
-    def test_branch(self, rmtree_mock, repo_const_mock, _clone_git_repo):
-        repo = MagicMock()
-        repo_const_mock.return_value = repo
-        find_strings("test_repo", branch="testbranch")
-        repo.remotes.origin.fetch.assert_called_once_with("testbranch")
-
-    @patch("truffleHog.truffleHog._clone_git_repo")
-    @patch("truffleHog.truffleHog.Repo")
-    @patch("shutil.rmtree")
     def test_repo_path(self, rmtree_mock, repo_const_mock, _clone_git_repo):
         find_strings("test_repo", repo_path="test/path/")
         rmtree_mock.assert_not_called()
