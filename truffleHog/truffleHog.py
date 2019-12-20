@@ -219,6 +219,8 @@ def find_strings(
     for branch in branches:
         since_commit_reached = False
         branch_name = branch.name
+        if branch_name == "origin":
+            branch_name = "HEAD"
         prev_commit = None
         for curr_commit in repo.iter_commits(branch_name, max_count=max_depth):
             commitHash = curr_commit.hexsha
