@@ -207,9 +207,11 @@ def find_strings(
 
     output_dir = tempfile.mkdtemp()
     try:
-        branches = repo.remotes.origin.fetch()
+        assert False
+        #branches = repo.remotes.origin.fetch()
     except Exception as e:
         branches = repo.remotes
+        print(branches)
         print(f"Unable to grab remotes: Reason={e}")
 
 
@@ -217,44 +219,46 @@ def find_strings(
         branches.append(branch)
 
     for branch in branches:
-        since_commit_reached = False
-        branch_name = branch.name
-        if branch_name == "origin":
-            branch_name = "HEAD"
-        prev_commit = None
-        for curr_commit in repo.iter_commits(branch_name, max_count=max_depth):
-            commitHash = curr_commit.hexsha
-            if commitHash == since_commit:
-                since_commit_reached = True
-            if since_commit and since_commit_reached:
-                prev_commit = curr_commit
-                continue
-            # if not prev_commit, then curr_commit is the newest commit. And we have nothing to diff with.
-            # But we will diff the first commit with NULL_TREE here to check the oldest code.
-            # In this way, no commit will be missed.
-            diff_hash = hashlib.md5(
-                (str(prev_commit) + str(curr_commit)).encode("utf-8")
-            ).digest()
-            if not prev_commit:
-                prev_commit = curr_commit
-                continue
-            elif diff_hash in already_searched:
-                prev_commit = curr_commit
-                continue
-            else:
-                diff = prev_commit.diff(curr_commit, create_patch=True)
-            # avoid searching the same diffs
-            already_searched.add(diff_hash)
-            foundIssues = diff_worker(
-                diff,
-                curr_commit,
-                prev_commit,
-                branch_name,
-                commitHash,
-                do_entropy,
-                do_regex,
-            )
-
+        try:
+            since_commit_reached = False
+            branch_name = branch.name
+            prev_commit = None
+            for curr_commit in repo.iter_commits(branch_name, max_count=max_depth):
+                commitHash = curr_commit.hexsha
+                if commitHash == since_commit:
+                    since_commit_reached = True
+                if since_commit and since_commit_reached:
+                    prev_commit = curr_commit
+                    continue
+                # if not prev_commit, then curr_commit is the newest commit. And we have nothing to diff with.
+                # But we will diff the first commit with NULL_TREE here to check the oldest code.
+                # In this way, no commit will be missed.
+                diff_hash = hashlib.md5(
+                    (str(prev_commit) + str(curr_commit)).encode("utf-8")
+                ).digest()
+                if not prev_commit:
+                    prev_commit = curr_commit
+                    continue
+                elif diff_hash in already_searched:
+                    prev_commit = curr_commit
+                    continue
+                else:
+                    diff = prev_commit.diff(curr_commit, create_patch=True)
+                # avoid searching the same diffs
+                already_searched.add(diff_hash)
+                foundIssues = diff_worker(
+                    diff,
+                    curr_commit,
+                    prev_commit,
+                    branch_name,
+                    commitHash,
+                    do_entropy,
+                    do_regex,
+                )
+        except Exception as e:
+            print(e)
+            continue
+            
             output = output.union(foundIssues)
 
             prev_commit = curr_commit
