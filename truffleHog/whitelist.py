@@ -11,8 +11,8 @@ colorama.init()
 class WhitelistEntry:
     def __init__(
         self,
-        branch,
         commit,
+        commitAuthor,
         commitHash,
         date,
         path,
@@ -20,9 +20,10 @@ class WhitelistEntry:
         stringDetected,
         acknowledged=False,
         secret_guid=None,
+        confidence="High"
     ):
-        self.branch = branch
         self.commit = commit
+        self.commitAuthor = commitAuthor
         self.commitHash = commitHash
         self.date = date
         self.path = path
@@ -37,6 +38,10 @@ class WhitelistEntry:
                     (commitHash + str(path) + stringDetected).encode("utf-8")
                 ).hexdigest()
             )
+        self.confidence = confidence
+        if self.reason == "High Entropy":
+            self.confidence = "Low"
+
 
     def __repr__(self):
         return f"Secret Instance GUID: {self.secret_guid}, String Detected:{self.stringDetected}"

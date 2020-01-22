@@ -124,8 +124,8 @@ def entropicDiff(
     for string in stringsFound:
         entropicFindings.add(
             WhitelistEntry(
-                branch=branch_name,
                 commit=prev_commit.message.replace("\n", ""),
+                commitAuthor=prev_commit.author.email,
                 commitHash=prev_commit.hexsha,
                 date=commit_time,
                 path=path,
@@ -146,8 +146,8 @@ def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, comm
         for string in found_strings:
             regex_matches.add(
                 WhitelistEntry(
-                    branch=branch_name,
                     commit=prev_commit.message.replace("\n", ""),
+                    commitAuthor=prev_commit.author.email,
                     commitHash=prev_commit.hexsha,
                     date=commit_time,
                     path=path,

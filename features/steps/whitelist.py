@@ -107,8 +107,8 @@ def step_impl(context):
     context.whitelist = {
         WhitelistEntry(
             acknowledged=False,
-            branch="origin/master",
             commit="Fake key",
+            commitAuthor="awesomedeveloper@shop.com",
             commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
             date="2019-12-06 09:16:54",
             path="test_file.txt",
@@ -140,8 +140,8 @@ def step_impl(context):
     context.output = context.whitelist = {
         WhitelistEntry(
             acknowledged=True,
-            branch="origin/master",
             commit="Fake key",
+            commitAuthor="awesomedeveloper@shop.com",
             commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
             date="2019-12-06 09:16:54",
             path="test_file.txt",
@@ -160,8 +160,8 @@ def step_impl(context):
     context.output = context.whitelist = {
         WhitelistEntry(
             acknowledged=False,
-            branch="origin/master",
             commit="Fake key",
+            commitAuthor="awesomedeveloper@shop.com",
             commitHash="2f19df0dc9d22b2a03f72a9d5f6276e3e3b7d2dd",
             date="2019-12-06 09:16:54",
             path="test_file.txt",
