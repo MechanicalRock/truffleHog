@@ -176,14 +176,14 @@ def diff_worker(
         foundIssues = set()
         if do_entropy:
             entropic_results = entropicDiff(
-                printableDiff, commit_time, branch_name, prev_commit, path, commitHash
+                printableDiff, commit_time, branch_name, curr_commit, path, commitHash
             )
             if entropicDiff:
                 issues = issues.union(entropic_results)
 
         if do_regex:
             found_regexes = regex_check(
-                printableDiff, commit_time, branch_name, prev_commit, path, commitHash
+                printableDiff, commit_time, branch_name, curr_commit, path, commitHash
             )
             issues = issues.union(found_regexes)
 
@@ -191,85 +191,47 @@ def diff_worker(
     return issues
 
 
-def find_strings(
-    git_url,
-    since_commit=None,
-    max_depth=10000,
-    branch=None,
-    repo_path=None,
-    do_entropy=True,
-    do_regex=True,
-):
-    output = set()
-    already_searched = set()
-
-    repo = _get_repo(repo_path, git_url)
-
-    output_dir = tempfile.mkdtemp()
+def scan_commit(commit, repo):
+    curr_commit = repo.commit(commit)
     try:
-        if branch:
-            branches = repo.remotes.origin.fetch(branch)
-        else:
-            branches = repo.remotes.origin.fetch()
-    except Exception as e:
-        print(f"Unable to grab remotes: Reason={e}")
-        branches = list()
+        prev_commit = curr_commit.parents[0]
+    except:
+        prev_commit = curr_commit
 
-    for branch in repo.branches:
-        branches.append(branch)
+    branch_name = "NA"
+    commitHash = curr_commit.hexsha
+    diff = prev_commit.diff(curr_commit, create_patch=True)
 
-    for branch in branches:
-        since_commit_reached = False
-        branch_name = branch.name
-        prev_commit = None
-        for curr_commit in repo.iter_commits(branch_name, max_count=max_depth):
-            commitHash = curr_commit.hexsha
-            if commitHash == since_commit:
-                since_commit_reached = True
-            if since_commit and since_commit_reached:
-                prev_commit = curr_commit
-                continue
-            # if not prev_commit, then curr_commit is the newest commit. And we have nothing to diff with.
-            # But we will diff the first commit with NULL_TREE here to check the oldest code.
-            # In this way, no commit will be missed.
-            diff_hash = hashlib.md5(
-                (str(prev_commit) + str(curr_commit)).encode("utf-8")
-            ).digest()
-            if not prev_commit:
-                prev_commit = curr_commit
-                continue
-            elif diff_hash in already_searched:
-                prev_commit = curr_commit
-                continue
-            else:
-                diff = prev_commit.diff(curr_commit, create_patch=True)
-            # avoid searching the same diffs
-            already_searched.add(diff_hash)
-            foundIssues = diff_worker(
-                diff,
-                curr_commit,
-                prev_commit,
-                branch_name,
-                commitHash,
-                do_entropy,
-                do_regex,
-            )
-
-            output = output.union(foundIssues)
-
-            prev_commit = curr_commit
-        # Handling the first commit
-        diff = curr_commit.diff(NULL_TREE, create_patch=True)
-        foundIssues = diff_worker(
+    diff = [blob for blob in diff.iter_change_type('M')] + [blob for blob in diff.iter_change_type('A')]
+    commit_results = diff_worker(
             diff,
             curr_commit,
             prev_commit,
             branch_name,
             commitHash,
-            do_entropy,
-            do_regex,
+            do_entropy=True,
+            do_regex=True,
         )
-        output = output.union(foundIssues)
+
+    return commit_results
+
+def find_strings(
+    git_url,
+    commit=None,
+    repo_path=None,
+    do_entropy=True,
+    do_regex=True,
+):
+    repo = _get_repo(repo_path, git_url)
+    commits = repo.iter_commits()
+    output = set()
+    
+    if commit:
+        commits = [commit]
+    
+    for commit in commits:
+        commit_diff = scan_commit(commit, repo)
+        output = output.union(commit_diff)
     return output
 
 
@@ -281,6 +243,9 @@ def main():
     parser.add_argument("--git_url", type=str, help="A valid repository URL")
     parser.add_argument(
         "--repo_path", type=str, help="File path to git project repository"
+    )
+    parser.add_argument(
+        "--commit", type=str, help="Commit SHA of git commit to scan"
     )
     parser.add_argument(
         "--remediate",
@@ -303,7 +268,7 @@ def main():
         remediate_secrets()
         sys.exit(0)
 
-    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path)
+    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path, commit=args.commit)
 
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 

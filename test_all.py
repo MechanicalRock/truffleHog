@@ -35,25 +35,20 @@ class TestStringMethods(unittest.TestCase):
         except UnicodeEncodeError:
             self.fail("Unicode print error")
 
-    def test_return_correct_commit_hash(self):
+    def test_return_correct_commit(self):
         # Start at commit d15627104d07846ac2914a976e8e347a663bbd9b, which
         # is immediately followed by a secret inserting commit:
         # https://github.com/dxa4481/truffleHog/commit/9ed54617547cfca783e0f81f8dc5c927e3d1e345
-        since_commit = "d15627104d07846ac2914a976e8e347a663bbd9b"
-        commit_w_secret = "9ed54617547cfca783e0f81f8dc5c927e3d1e345"
-        cross_validating_commit_w_secret_comment = "OH no a secret"
+        commit_w_secret = "d15627104d07846ac2914a976e8e347a663bbd9b"
+        cross_validating_commit_w_secret_comment = "Oh no a secret file"
 
         results = find_strings(
             "https://github.com/dxa4481/truffleHog.git",
-            since_commit=since_commit,
-            do_entropy=True,
+            commit = commit_w_secret
         )
-        commit_under_test = [
-            wle for wle in results if wle.commitHash == commit_w_secret
-        ]
-        print(commit_under_test)
+        result = results.pop()
         self.assertEqual(
-            cross_validating_commit_w_secret_comment, commit_under_test[-1].commit
+            cross_validating_commit_w_secret_comment, result.commit
         )
 
     @patch("truffleHog.truffleHog._clone_git_repo")
