@@ -113,7 +113,7 @@ def step_impl(context):
             date="2019-12-06 09:16:54",
             path="test_file.txt",
             reason="Amazon AWS Access Key ID",
-            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            secretGuid="b3bf7c97177faa342b60c7171b06300d",
             stringDetected="AKIATHISISNOTREALKEY",
         )
     }
@@ -146,7 +146,7 @@ def step_impl(context):
             date="2019-12-06 09:16:54",
             path="test_file.txt",
             reason="Amazon AWS Access Key ID",
-            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            secretGuid="b3bf7c97177faa342b60c7171b06300d",
             stringDetected="AKIATHISISNOTREALKEY",
         )
     }
@@ -166,7 +166,7 @@ def step_impl(context):
             date="2019-12-06 09:16:54",
             path="test_file.txt",
             reason="Amazon AWS Access Key ID",
-            secret_guid="b3bf7c97177faa342b60c7171b06300d",
+            secretGuid="b3bf7c97177faa342b60c7171b06300d",
             stringDetected="AKIATHISISNOTREALKEY",
         )
     }

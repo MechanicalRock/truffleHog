@@ -276,16 +276,20 @@ def main():
     if not args.pipeline_mode:
         print(f"Working with project path {repo.git_dir}")
 
+
     if args.pipeline_mode:
-        # Disable terminal color codes in the pipeline if in pipeline mode
         statistics = whitelist_statistics(args.pipeline_mode)
+        if args.commit:
+            results = json.dumps(statistics.to_dict_per_commit(repo, args.commit), indent=4)
+        else:
+            results = json.dumps(statistics.to_dict(), indent=4)
+        # Disable terminal color codes in the pipeline if in pipeline mode
+
+        print(results)
+
         if statistics == False:
-            results = json.dumps({args.git_url: "No results", "status": "PASS"}, indent=4)
-            print(results)
             sys.exit(0)
         else:
-            results = json.dumps({args.git_url: statistics.to_dict(), "status": "FAIL"}, indent=4)
-            print(results)
             sys.exit(1)
 
     failure_message = None

@@ -1,6 +1,8 @@
 import json
 import hashlib
 import jsons
+import datetime
+from itertools import groupby
 from collections import Counter
 from termcolor import colored
 import colorama
@@ -19,7 +21,7 @@ class WhitelistEntry:
         reason,
         stringDetected,
         acknowledged=False,
-        secret_guid=None,
+        secretGuid=None,
         confidence="High"
     ):
         self.commit = commit
@@ -31,9 +33,9 @@ class WhitelistEntry:
         self.stringDetected = stringDetected.lstrip("+-")
         self.acknowledged = acknowledged
 
-        self.secret_guid = secret_guid
-        if secret_guid == None:
-            self.secret_guid = str(
+        self.secretGuid = secretGuid
+        if secretGuid == None:
+            self.secretGuid = str(
                 hashlib.md5(
                     (commitHash + str(path) + stringDetected).encode("utf-8")
                 ).hexdigest()
@@ -44,13 +46,13 @@ class WhitelistEntry:
 
 
     def __repr__(self):
-        return f"Secret Instance GUID: {self.secret_guid}, String Detected:{self.stringDetected}"
+        return f"Secret Instance GUID: {self.secretGuid}, String Detected:{self.stringDetected}"
 
     def __eq__(self, other):
-        return self.secret_guid == other.secret_guid
+        return self.secretGuid == other.secretGuid
 
     def __hash__(self):
-        return int(self.secret_guid, 16)
+        return int(self.secretGuid, 16)
 
 
 class WhitelistStatistics:
@@ -98,6 +100,21 @@ class WhitelistStatistics:
             "Categories": " ".join(self.breakdown().replace("\n", ",").split()),
             "Top Files": " ".join(self.largest_files().replace("\n", ",").split()),
         }
+
+    def to_dict_per_commit(self, repo, commit):
+        now = datetime.datetime.utcnow()
+        commit = repo.commit(commit)
+        commit_timestamp = datetime.datetime.utcfromtimestamp(commit.authored_date)
+        return {
+                    "detectionTimestamp": now.strftime('%Y-%m-%dT%H:%M:%S') + now.strftime('.%f')[:4] + 'Z',
+                    "repository": commit.repo.git_dir,
+                    "commit": commit.hexsha,
+                    "commitMessage": commit.message.strip('\n'),
+                    "commitTimestamp": commit_timestamp.strftime('%Y-%m-%dT%H:%M:%S') + commit_timestamp.strftime('.%f')[:4] + 'Z',
+                    "totalStrings": self.count("stringDetected"),
+                    "uniqueStrings": len(self.unique("stringDetected")),
+                    "findings": jsons.dump(self.whitelist_object)
+                } 
 
     def __repr__(self):
         message = (
@@ -170,7 +187,7 @@ def add_to_whitelist(entry, whitelist):
 def reconcile_secrets(matches, whitelist):
     for entry in whitelist.copy():
         if entry not in matches:
-            # print(f"Can no longer find {entry.secret_guid}")
+            # print(f"Can no longer find {entry.secretGuid}")
             whitelist.remove(entry)
             continue
         if entry.acknowledged == True:
