@@ -137,7 +137,9 @@ class WhitelistStatistics:
 
 
 def curate_whitelist(outstanding_secrets):
+
     whitelist_in_memory = read_whitelist_to_memory()
+
     if not whitelist_in_memory:
         print(f"Creating a new whitelist.json...", file=sys.stderr)
         write_whitelist_to_disk(outstanding_secrets)
@@ -209,9 +211,6 @@ def remediate_secrets():
             ]
         )
         for secret in counter:
-            # if "PRIVATE KEY" in secret:
-            #     # We can't automatically reconcile private keys
-            #     continue
             classification = user_classify_secrets(secret)
             update_secret(secret, classification, in_memory_whitelist)
         write_whitelist_to_disk(in_memory_whitelist)
@@ -236,10 +235,8 @@ def update_secret(secret, classification, whitelist):
             entry.acknowledged = classification
 
 
-def whitelist_statistics(pipeline_mode=False):
-    in_memory_whitelist = read_whitelist_to_memory()
-    if in_memory_whitelist:
-        unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
-        return unique_secrets
-    else:
-        return False
+def whitelist_statistics(in_memory_whitelist=None, pipeline_mode=False):
+    if not in_memory_whitelist:
+        in_memory_whitelist = read_whitelist_to_memory()
+    unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
+    return unique_secrets

@@ -56,7 +56,8 @@ def _get_repo(repo_path=None, git_url=None):
             colored(
                 f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
                 "red",
-            ), file=sys.stderr
+            ),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -254,7 +255,7 @@ def main():
 
     parser.add_argument(
         "--pipeline_mode",
-        help="Flags that secrets should not be output and that results are directed to .",
+        help="Flags that secrets should not be output and that results are directed to stderr.",
         action="store_true",
     )
 
@@ -268,21 +269,20 @@ def main():
         remediate_secrets()
         sys.exit(0)
 
-    outstanding_secrets = find_strings(
+    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
+
+    found_strings = find_strings(
         args.git_url, repo_path=args.repo_path, commit=args.commit
     )
 
-    outstanding_secrets = curate_whitelist(outstanding_secrets)
-
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
 
-
     if args.pipeline_mode:
-        statistics = whitelist_statistics(args.pipeline_mode)
+        outstanding_secrets = found_strings
+        statistics = whitelist_statistics(outstanding_secrets, pipeline_mode=True)
+
         if args.commit:
-            results = json.dumps(
-                statistics.to_dict_per_commit(repo, args.commit), indent=4
-            )
+            results = json.dumps(statistics.to_dict_per_commit(repo, args.commit))
         else:
             results = json.dumps(statistics.to_dict(), indent=4)
         # Disable terminal color codes in the pipeline if in pipeline mode
@@ -294,19 +294,20 @@ def main():
         else:
             sys.exit(1)
 
-    print(f"Working with project path {repo.git_dir}")
+    if not args.pipeline_mode:
+        print(f"Working with project path {repo.git_dir}", file=sys.stderr)
+        outstanding_secrets = curate_whitelist(found_strings)
+        failure_message = None
+        for file in repo.untracked_files:
+            if file == "whitelist.json":
+                failure_message = colored(
+                    "The whitelist.json file should be commited to source control!",
+                    "yellow",
+                )
 
-    failure_message = None
-    for file in repo.untracked_files:
-        if file == "whitelist.json":
-            failure_message = colored(
-                "The whitelist.json file should be commited to source control!",
-                "yellow",
-            )
+        print(colored(whitelist_statistics(args.pipeline_mode), "green"))
 
-    print(colored(whitelist_statistics(args.pipeline_mode), "green"))
-
-    exit_code(outstanding_secrets, failure_message)
+        exit_code(outstanding_secrets, failure_message)
 
 
 def exit_code(output, failure_message=None):
