@@ -225,6 +225,12 @@ def find_strings(git_url, commit=None, repo_path=None, do_entropy=True, do_regex
     output = set()
 
     if commit:
+        try:
+            repo.commit(commit)
+        except:
+            print(colored(f"Could not find {commit}", color="red"), file=sys.stderr),
+            sys.exit(0)
+        
         commits = [commit]
 
     for commit in commits:
@@ -270,6 +276,7 @@ def main():
         sys.exit(0)
 
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
+
 
     found_strings = find_strings(
         args.git_url, repo_path=args.repo_path, commit=args.commit

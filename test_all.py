@@ -43,13 +43,24 @@ class TestStringMethods(unittest.TestCase):
         cross_validating_commit_w_secret_comment = "Oh no a secret file"
 
         results = find_strings(
-            "https://github.com/dxa4481/truffleHog.git",
-            commit = commit_w_secret
+            "https://github.com/dxa4481/truffleHog.git", commit=commit_w_secret
         )
         result = results.pop()
-        self.assertEqual(
-            cross_validating_commit_w_secret_comment, result.commit
+        self.assertEqual(cross_validating_commit_w_secret_comment, result.commit)
+    
+    def test_exit_if_invalid_commit(self):
+        # Start at commit d15627104d07846ac2914a976e8e347a663bbd9b, which
+        # is immediately followed by a secret inserting commit:
+        # https://github.com/dxa4481/truffleHog/commit/9ed54617547cfca783e0f81f8dc5c927e3d1e345
+        commit_w_secret = "14a976e8e347a663bbd9b"
+        cross_validating_commit_w_secret_comment = "Oh no a secret file"
+
+        with self.assertRaises(SystemExit) as context:
+            find_strings(
+            "https://github.com/dxa4481/truffleHog.git", commit=commit_w_secret
         )
+
+        self.assertEqual(context.exception.code, 0)
 
     @patch("truffleHog.truffleHog._clone_git_repo")
     @patch("truffleHog.truffleHog.Repo")
