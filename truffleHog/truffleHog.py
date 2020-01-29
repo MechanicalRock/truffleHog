@@ -56,7 +56,7 @@ def _get_repo(repo_path=None, git_url=None):
             colored(
                 f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
                 "red",
-            )
+            ), file=sys.stderr
         )
         sys.exit(1)
 
@@ -202,33 +202,30 @@ def scan_commit(commit, repo):
     commitHash = curr_commit.hexsha
     diff = prev_commit.diff(curr_commit, create_patch=True)
 
-    diff = [blob for blob in diff.iter_change_type('M')] + [blob for blob in diff.iter_change_type('A')]
+    diff = [blob for blob in diff.iter_change_type("M")] + [
+        blob for blob in diff.iter_change_type("A")
+    ]
     commit_results = diff_worker(
-            diff,
-            curr_commit,
-            prev_commit,
-            branch_name,
-            commitHash,
-            do_entropy=True,
-            do_regex=True,
-        )
+        diff,
+        curr_commit,
+        prev_commit,
+        branch_name,
+        commitHash,
+        do_entropy=True,
+        do_regex=True,
+    )
 
     return commit_results
 
-def find_strings(
-    git_url,
-    commit=None,
-    repo_path=None,
-    do_entropy=True,
-    do_regex=True,
-):
+
+def find_strings(git_url, commit=None, repo_path=None, do_entropy=True, do_regex=True):
     repo = _get_repo(repo_path, git_url)
     commits = repo.iter_commits()
     output = set()
-    
+
     if commit:
         commits = [commit]
-    
+
     for commit in commits:
         commit_diff = scan_commit(commit, repo)
         output = output.union(commit_diff)
@@ -241,20 +238,23 @@ def main():
     )
 
     parser.add_argument("--git_url", type=str, help="A valid repository URL")
-    parser.add_argument(
-        "--repo_path", type=str, help="File path to git project repository"
-    )
-    parser.add_argument(
-        "--commit", type=str, help="Commit SHA of git commit to scan"
-    )
+    parser.add_argument("--repo_path", type=str, help="File path to git project ")
+    parser.add_argument("--commit", type=str, help="Commit SHA of git commit to scan")
     parser.add_argument(
         "--remediate",
         help="Interactive mode for reconciling secrets",
         action="store_true",
     )
+
+    parser.add_argument(
+        "--block",
+        help="Determines whether the program should exit code 1 if secrets are found",
+        action="store_true",
+    )
+
     parser.add_argument(
         "--pipeline_mode",
-        help="Flags that secrets should not be output and to run in a pipeline friendly mode.",
+        help="Flags that secrets should not be output and that results are directed to .",
         action="store_true",
     )
 
@@ -268,29 +268,33 @@ def main():
         remediate_secrets()
         sys.exit(0)
 
-    outstanding_secrets = find_strings(args.git_url, repo_path=args.repo_path, commit=args.commit)
+    outstanding_secrets = find_strings(
+        args.git_url, repo_path=args.repo_path, commit=args.commit
+    )
 
     outstanding_secrets = curate_whitelist(outstanding_secrets)
 
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
-    if not args.pipeline_mode:
-        print(f"Working with project path {repo.git_dir}")
 
 
     if args.pipeline_mode:
         statistics = whitelist_statistics(args.pipeline_mode)
         if args.commit:
-            results = json.dumps(statistics.to_dict_per_commit(repo, args.commit), indent=4)
+            results = json.dumps(
+                statistics.to_dict_per_commit(repo, args.commit), indent=4
+            )
         else:
             results = json.dumps(statistics.to_dict(), indent=4)
         # Disable terminal color codes in the pipeline if in pipeline mode
 
         print(results)
 
-        if statistics == False:
+        if (statistics == False) or (not args.block):
             sys.exit(0)
         else:
             sys.exit(1)
+
+    print(f"Working with project path {repo.git_dir}")
 
     failure_message = None
     for file in repo.untracked_files:

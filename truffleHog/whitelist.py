@@ -1,3 +1,4 @@
+import sys
 import json
 import hashlib
 import jsons
@@ -22,7 +23,7 @@ class WhitelistEntry:
         stringDetected,
         acknowledged=False,
         secretGuid=None,
-        confidence="High"
+        confidence="High",
     ):
         self.commit = commit
         self.commitAuthor = commitAuthor
@@ -43,7 +44,6 @@ class WhitelistEntry:
         self.confidence = confidence
         if self.reason == "High Entropy":
             self.confidence = "Low"
-
 
     def __repr__(self):
         return f"Secret Instance GUID: {self.secretGuid}, String Detected:{self.stringDetected}"
@@ -106,15 +106,19 @@ class WhitelistStatistics:
         commit = repo.commit(commit)
         commit_timestamp = datetime.datetime.utcfromtimestamp(commit.authored_date)
         return {
-                    "detectionTimestamp": now.strftime('%Y-%m-%dT%H:%M:%S') + now.strftime('.%f')[:4] + 'Z',
-                    "repository": commit.repo.git_dir,
-                    "commit": commit.hexsha,
-                    "commitMessage": commit.message.strip('\n'),
-                    "commitTimestamp": commit_timestamp.strftime('%Y-%m-%dT%H:%M:%S') + commit_timestamp.strftime('.%f')[:4] + 'Z',
-                    "totalStrings": self.count("stringDetected"),
-                    "uniqueStrings": len(self.unique("stringDetected")),
-                    "findings": jsons.dump(self.whitelist_object)
-                } 
+            "detectionTimestamp": now.strftime("%Y-%m-%dT%H:%M:%S")
+            + now.strftime(".%f")[:4]
+            + "Z",
+            "repository": commit.repo.git_dir,
+            "commit": commit.hexsha,
+            "commitMessage": commit.message.strip("\n"),
+            "commitTimestamp": commit_timestamp.strftime("%Y-%m-%dT%H:%M:%S")
+            + commit_timestamp.strftime(".%f")[:4]
+            + "Z",
+            "totalStrings": self.count("stringDetected"),
+            "uniqueStrings": len(self.unique("stringDetected")),
+            "findings": jsons.dump(self.whitelist_object),
+        }
 
     def __repr__(self):
         message = (
@@ -135,7 +139,7 @@ class WhitelistStatistics:
 def curate_whitelist(outstanding_secrets):
     whitelist_in_memory = read_whitelist_to_memory()
     if not whitelist_in_memory:
-        print(f"Creating a new whitelist.json...")
+        print(f"Creating a new whitelist.json...", file=sys.stderr)
         write_whitelist_to_disk(outstanding_secrets)
     else:
         outstanding_secrets, whitelist_in_memory = reconcile_secrets(
@@ -162,7 +166,7 @@ def write_whitelist_to_disk(whitelist_object):
             )
             json.dump(whitelist_object, whitelist, indent=4)
     except Exception as e:
-        print(f"Unable to write to whitelist: {e}")
+        print(f"Unable to write to whitelist: {e}", file=sys.stderr)
 
 
 def read_whitelist_to_memory():
@@ -174,7 +178,7 @@ def read_whitelist_to_memory():
                 in_memory_whitelist.add(WhitelistEntry(**entry))
         return in_memory_whitelist
     except Exception as e:
-        print("Whitelist not found")
+        print("Whitelist not found", file=sys.stderr)
         return False
 
 
@@ -187,11 +191,9 @@ def add_to_whitelist(entry, whitelist):
 def reconcile_secrets(matches, whitelist):
     for entry in whitelist.copy():
         if entry not in matches:
-            # print(f"Can no longer find {entry.secretGuid}")
             whitelist.remove(entry)
             continue
         if entry.acknowledged == True:
-            # print(f"Already acknowledged:\n{entry}. No action required.")
             matches.remove(entry)
     return matches, whitelist
 
