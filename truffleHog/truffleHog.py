@@ -285,13 +285,12 @@ def main():
     repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
 
     if args.pipeline_mode:
-        outstanding_secrets = found_strings
-        statistics = whitelist_statistics(outstanding_secrets, pipeline_mode=True)
+        statistics = whitelist_statistics(found_strings, pipeline_mode=True)
 
         if args.commit:
             results = json.dumps(statistics.to_dict_per_commit(repo, args.commit))
         else:
-            results = json.dumps(statistics.to_dict(), indent=4)
+            results = json.dumps(statistics.to_dict())
         # Disable terminal color codes in the pipeline if in pipeline mode
 
         print(results)

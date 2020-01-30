@@ -235,8 +235,8 @@ def update_secret(secret, classification, whitelist):
             entry.acknowledged = classification
 
 
-def whitelist_statistics(in_memory_whitelist=None, pipeline_mode=False):
-    if not in_memory_whitelist:
+def whitelist_statistics(in_memory_whitelist, pipeline_mode=False):
+    if pipeline_mode == False:
         in_memory_whitelist = read_whitelist_to_memory()
     unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
     return unique_secrets
