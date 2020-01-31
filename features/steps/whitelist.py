@@ -37,9 +37,7 @@ def step_impl(context):
 
 @when("trufflehog scans the repo")
 def step_impl(context):
-    context.trufflehogScan = find_strings(
-        context.repository[1]
-    )
+    context.trufflehogScan = find_strings(context.repository[1])
 
 
 @then("Trufflehog should find no secrets")
