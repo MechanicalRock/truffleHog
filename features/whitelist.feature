@@ -18,24 +18,29 @@ Feature: Automated creation of a whitelist file that is added to a repository. T
   Scenario: Trufflehog updates a secret on the whitelist.
     Given Theres a secret in the repo, and it's in the whitelist
     When  trufflehog scans the repo
-    Then  Trufflehog should not change the whitelist
-    
-  Scenario: Trufflehog finds a stale secret on the whitelist.
-    Given An existing secret in the list
-    When  the secret does not exist in the codebase
-    Then  Trufflehog should remove the record
+    Then  Trufflehog should not include it in the scan result
 
   Scenario: Trufflehog exit code is 0 on finding no secrets
     Given Trufflehog has found no secrets
-    When  Trufflehog exits
+    When  trufflehog scans the repo
     Then  the exit code should be 0
 
   Scenario: Trufflehog exit code is 0 on finding only acknowledged/whitelisted secrets
     Given Trufflehog has found secrets, but they're all on the whitelist and acknowledged
-    When  Trufflehog exits
+    When  trufflehog scans the repo
     Then  the exit code should be 0
 
   Scenario: Trufflehog exit code is 1 on finding secrets
     Given Trufflehog has found secrets, they are on the whitelist but not acknowledged
-    When  Trufflehog exits
+    When  trufflehog scans the repo
     Then  the exit code should be 1
+
+ Scenario: Trufflehog finds secrets in it's own repo (console mode)
+    Given we have a known github repository with secrets
+    When  trufflehog scans the repo in console mode
+    Then  the exit code should be 1
+
+   Scenario: Trufflehog finds secrets in it's own repo (pipeline mode)
+    Given we have a known github repository with secrets
+    When  trufflehog scans the repo in pipeline mode
+    Then  the exit code should be 0

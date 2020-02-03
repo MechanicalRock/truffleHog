@@ -11,6 +11,54 @@ import colorama
 colorama.init()
 
 
+class ScanResults:
+    def __init__(self, **kwargs):
+        self.possible_secrets = set()
+        self.known_secrets = {
+            result
+            for result in self.read_whitelist_from_disk()
+            if result.acknowledged == True
+        }
+        self.reconciled_results = set()
+
+    def write_whitelist_to_disk(self):
+        try:
+            with open("whitelist.json", "w+") as whitelist:
+                results = jsons.dump(
+                    sorted(
+                        self.reconciled_results,
+                        key=lambda whitelist: whitelist.acknowledged,
+                        reverse=False,
+                    )
+                )
+                json.dump(results, whitelist)
+        except Exception as e:
+            print(f"Unable to write to whitelist: {e}", file=sys.stderr)
+
+    def read_whitelist_from_disk(self):
+        try:
+            with open("whitelist.json", "r") as whitelist:
+                file_contents = json.load(whitelist)
+                known_secrets = set()
+                for entry in file_contents:
+                    known_secrets.add(WhitelistEntry(**entry))
+                return known_secrets
+        except Exception as e:
+            print(f"Whitelist not found: {e}", file=sys.stderr)
+            return set()
+
+    def reconcile_secrets(self):
+        self.reconciled_results = self.known_secrets.union(self.possible_secrets)
+        self.possible_secrets = self.possible_secrets.difference_update(
+            self.known_secrets
+        )
+        if self.possible_secrets == None:
+            self.possible_secrets = set()
+
+    def _return_secret_by_status(status):
+        return {secret for secret in reconconcied}
+
+
 class WhitelistEntry:
     def __init__(
         self,
@@ -136,70 +184,6 @@ class WhitelistStatistics:
         return message
 
 
-def curate_whitelist(outstanding_secrets):
-
-    whitelist_in_memory = read_whitelist_to_memory()
-
-    if not whitelist_in_memory:
-        print(f"Creating a new whitelist.json...", file=sys.stderr)
-        write_whitelist_to_disk(outstanding_secrets)
-    else:
-        outstanding_secrets, whitelist_in_memory = reconcile_secrets(
-            outstanding_secrets, whitelist_in_memory
-        )
-
-        for entry in outstanding_secrets:
-            whitelist = add_to_whitelist(entry, whitelist_in_memory)
-
-        write_whitelist_to_disk(whitelist_in_memory)
-
-    return outstanding_secrets
-
-
-def write_whitelist_to_disk(whitelist_object):
-    try:
-        with open("whitelist.json", "w+") as whitelist:
-            whitelist_object = jsons.dump(
-                sorted(
-                    whitelist_object,
-                    key=lambda whitelist: whitelist.acknowledged,
-                    reverse=False,
-                )
-            )
-            json.dump(whitelist_object, whitelist, indent=4)
-    except Exception as e:
-        print(f"Unable to write to whitelist: {e}", file=sys.stderr)
-
-
-def read_whitelist_to_memory():
-    try:
-        with open("whitelist.json", "r") as whitelist:
-            file_contents = json.load(whitelist)
-            in_memory_whitelist = set()
-            for entry in file_contents:
-                in_memory_whitelist.add(WhitelistEntry(**entry))
-        return in_memory_whitelist
-    except Exception as e:
-        print("Whitelist not found", file=sys.stderr)
-        return False
-
-
-def add_to_whitelist(entry, whitelist):
-    if entry not in whitelist:
-        whitelist.add(entry)
-    return whitelist
-
-
-def reconcile_secrets(matches, whitelist):
-    for entry in whitelist.copy():
-        if entry not in matches:
-            whitelist.remove(entry)
-            continue
-        if entry.acknowledged == True:
-            matches.remove(entry)
-    return matches, whitelist
-
-
 def remediate_secrets():
     in_memory_whitelist = read_whitelist_to_memory()
     if in_memory_whitelist:
@@ -214,8 +198,8 @@ def remediate_secrets():
             classification = user_classify_secrets(secret)
             update_secret(secret, classification, in_memory_whitelist)
         write_whitelist_to_disk(in_memory_whitelist)
-    else:
-        return False
+
+    sys.exit(0)
 
 
 def user_classify_secrets(secret):
@@ -233,10 +217,3 @@ def update_secret(secret, classification, whitelist):
     for entry in whitelist:
         if entry.stringDetected == secret:
             entry.acknowledged = classification
-
-
-def whitelist_statistics(in_memory_whitelist, pipeline_mode=False):
-    if pipeline_mode == False:
-        in_memory_whitelist = read_whitelist_to_memory()
-    unique_secrets = WhitelistStatistics(in_memory_whitelist, pipeline_mode)
-    return unique_secrets

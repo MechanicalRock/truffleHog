@@ -13,17 +13,15 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import (
-    WhitelistEntry,
-    curate_whitelist,
-    whitelist_statistics,
-    remediate_secrets,
-)
+from truffleHog.whitelist import WhitelistEntry, WhitelistStatistics, ScanResults
 from termcolor import colored
 
 import colorama
 
-colorama.init()  # Color for our windows comrades
+colorama.init()
+
+BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+HEX_CHARS = "1234567890abcdefABCDEF"
 
 
 def _get_regexes():
@@ -44,13 +42,24 @@ def _exclusion_filter(path):
     return False
 
 
-def _get_repo(repo_path=None, git_url=None):
+def _get_repo(repo_path):
     try:
-        if repo_path:
-            project_path = repo_path
-        else:
-            project_path = _clone_git_repo(git_url)
-        return Repo(project_path)
+        repo = Repo(repo_path)
+    except:
+        repo = Repo(_clone_git_repo(repo_path))
+    try:
+        repo.iter_commits()
+        return repo
+    except ValueError as e:
+        print(
+            colored(
+                f"Can't operate on this repository. Is it a non-empty git repository? {e}.",
+                "red",
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     except Exception as e:
         print(
             colored(
@@ -66,10 +75,6 @@ def _clone_git_repo(git_url):
     project_path = tempfile.mkdtemp()
     Repo.clone_from(git_url, project_path)
     return project_path
-
-
-BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-HEX_CHARS = "1234567890abcdefABCDEF"
 
 
 def shannon_entropy(data, iterator):
@@ -104,9 +109,7 @@ def get_strings_of_set(word, char_set, threshold=20):
     return strings
 
 
-def entropicDiff(
-    printableDiff, commit_time, branch_name, prev_commit, path, commitHash
-):
+def entropicDiff(printableDiff, commit_time, prev_commit, path, commitHash):
     entropicFindings = set()
     stringsFound = set()
     lines = printableDiff.split("\n")
@@ -138,7 +141,7 @@ def entropicDiff(
     return entropicFindings
 
 
-def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, commitHash):
+def regex_check(printableDiff, commit_time, prev_commit, path, commitHash):
     regex_matches = set()
     regexes = _get_regexes()
     for key in regexes:
@@ -159,9 +162,7 @@ def regex_check(printableDiff, commit_time, branch_name, prev_commit, path, comm
     return regex_matches
 
 
-def diff_worker(
-    diff, curr_commit, prev_commit, branch_name, commitHash, do_entropy, do_regex
-):
+def diff_worker(diff, curr_commit, prev_commit, commitHash):
     issues = set()
     for blob in diff:
         path = blob.b_path if blob.b_path else blob.a_path
@@ -174,21 +175,16 @@ def diff_worker(
             prev_commit.committed_date
         ).strftime("%Y-%m-%d %H:%M:%S")
 
-        foundIssues = set()
-        if do_entropy:
-            entropic_results = entropicDiff(
-                printableDiff, commit_time, branch_name, curr_commit, path, commitHash
-            )
-            if entropicDiff:
-                issues = issues.union(entropic_results)
+        entropic_results = entropicDiff(
+            printableDiff, commit_time, curr_commit, path, commitHash
+        )
 
-        if do_regex:
-            found_regexes = regex_check(
-                printableDiff, commit_time, branch_name, curr_commit, path, commitHash
-            )
-            issues = issues.union(found_regexes)
+        found_regexes = regex_check(
+            printableDiff, commit_time, curr_commit, path, commitHash
+        )
+        issues = issues.union(found_regexes)
+        issues = issues.union(entropic_results)
 
-        issues = issues.union(foundIssues)
     return issues
 
 
@@ -199,30 +195,21 @@ def scan_commit(commit, repo):
     except:
         prev_commit = curr_commit
 
-    branch_name = "NA"
     commitHash = curr_commit.hexsha
     diff = prev_commit.diff(curr_commit, create_patch=True)
 
     diff = [blob for blob in diff.iter_change_type("M")] + [
         blob for blob in diff.iter_change_type("A")
     ]
-    commit_results = diff_worker(
-        diff,
-        curr_commit,
-        prev_commit,
-        branch_name,
-        commitHash,
-        do_entropy=True,
-        do_regex=True,
-    )
+    commit_results = diff_worker(diff, curr_commit, prev_commit, commitHash)
 
     return commit_results
 
 
-def find_strings(git_url, commit=None, repo_path=None, do_entropy=True, do_regex=True):
-    repo = _get_repo(repo_path, git_url)
-    commits = repo.iter_commits()
+def find_strings(repo_path, commit=None):
     output = set()
+    repo = _get_repo(repo_path)
+    commits = repo.iter_commits()
 
     if commit:
         try:
@@ -239,23 +226,76 @@ def find_strings(git_url, commit=None, repo_path=None, do_entropy=True, do_regex
     return output
 
 
-def main():
+def console_mode(args):
+    scan = ScanResults()
+
+    failure_message = None
+    repo = _get_repo(repo_path=args.repo_path)
+
+    scan.possible_secrets = find_strings(repo_path=args.repo_path, commit=args.commit)
+    print(
+        colored(f"Working with project path {repo.git_dir}", "green"), file=sys.stderr
+    )
+
+    scan.reconcile_secrets()
+    wls = WhitelistStatistics(scan.reconciled_results, args.pipeline_mode)
+    print(colored(wls, "green"))
+    scan.write_whitelist_to_disk()
+
+    return wls
+
+
+def pipeline_mode(args):
+    scan = ScanResults()
+
+    repo = _get_repo(repo_path=args.repo_path)
+
+    scan.possible_secrets = find_strings(repo_path=args.repo_path, commit=args.commit)
+
+    wls = WhitelistStatistics(scan.possible_secrets, pipeline_mode=True)
+
+    if args.commit:
+        results = json.dumps(wls.to_dict_per_commit(repo, args.commit))
+    else:
+        results = json.dumps(wls.to_dict())
+
+    print(results)
+    return wls
+
+
+def exit_code(output, pipeline_mode=False):
+    if pipeline_mode:
+        sys.exit(0)
+    if output:
+        print(
+            colored(
+                f"Secrets detected: {len(output)}. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
+                "red",
+            )
+        )
+        sys.exit(1)
+    else:
+        print(
+            colored(
+                "Detected no secrets! Clear to commit whitelist.json and push to remote repository",
+                "green",
+            )
+        )
+        sys.exit(0)
+
+
+def main(*args, **kwargs):
     parser = argparse.ArgumentParser(
         description="Find secrets hidden in the depths of git."
     )
 
-    parser.add_argument("--git_url", type=str, help="A valid repository URL")
-    parser.add_argument("--repo_path", type=str, help="File path to git project ")
+    parser.add_argument(
+        "--repo_path", type=str, default=".", help="File path to git project "
+    )
     parser.add_argument("--commit", type=str, help="Commit SHA of git commit to scan")
     parser.add_argument(
         "--remediate",
         help="Interactive mode for reconciling secrets",
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--block",
-        help="Determines whether the program should exit code 1 if secrets are found",
         action="store_true",
     )
 
@@ -267,77 +307,16 @@ def main():
 
     args = parser.parse_args()
 
-    if not (args.repo_path or args.git_url):
-        # If neither arg is supplied run with the cwd as the path
-        args.repo_path = "."
-
     if args.remediate:
         remediate_secrets()
-        sys.exit(0)
-
-    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
-
-    found_strings = find_strings(
-        args.git_url, repo_path=args.repo_path, commit=args.commit
-    )
-
-    repo = _get_repo(repo_path=args.repo_path, git_url=args.git_url)
 
     if args.pipeline_mode:
-        statistics = whitelist_statistics(found_strings, pipeline_mode=True)
-
-        if args.commit:
-            results = json.dumps(statistics.to_dict_per_commit(repo, args.commit))
-        else:
-            results = json.dumps(statistics.to_dict())
-        # Disable terminal color codes in the pipeline if in pipeline mode
-
-        print(results)
-
-
-        if (len(statistics.whitelist_object) == 0) or (not args.block):
-            sys.exit(0)
-        else:
-            sys.exit(1)
+        pipeline_mode(args)
+        exit_code(wls.whitelist_object, pipeline_mode=True)
 
     if not args.pipeline_mode:
-        print(f"Working with project path {repo.git_dir}", file=sys.stderr)
-        if found_strings == []:
-            exit_code(output=None, failure_message=None)
-        outstanding_secrets = curate_whitelist(found_strings)
-        failure_message = None
-        for file in repo.untracked_files:
-            if file == "whitelist.json":
-                failure_message = colored(
-                    "The whitelist.json file should be commited to source control!",
-                    "yellow",
-                )
-
-        print(colored(whitelist_statistics(args.pipeline_mode), "green"))
-
-        exit_code(outstanding_secrets, failure_message)
-
-
-def exit_code(output, failure_message=None):
-    if output or failure_message:
-        if not failure_message:
-            print(
-                colored(
-                    f"Secrets detected: {len(output)}. Please review the output in whitelist.json and either acknowledge the secrets or remediate them",
-                    "red",
-                )
-            )
-        else:
-            print(failure_message)
-        sys.exit(1)
-    else:
-        print(
-            colored(
-                "Detected no secrets! Clear to commit whitelist.json and push to remote repository",
-                "green",
-            )
-        )
-        sys.exit(0)
+        wls = console_mode(args)
+        exit_code(wls.whitelist_object)
 
 
 if __name__ == "__main__":
