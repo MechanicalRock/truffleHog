@@ -9,11 +9,8 @@
           "pip install -r requirements.txt",
           "git config --global user.email josh.crane@mechanicalrock.io",
           "git config --global user.name JoshCrane",
-          "dir=$(pwd)",
-          "parentdir="$(dirname "$dir")",
-          "export PYTHONPATH=$PYTHONPATH:$parentdir"
-          ]
-    },
+          "export PYTHONPATH=PYTHONPATH:$(dirname `pwd`)"
+        },
     "build": {
       "commands": [
         "behave",
