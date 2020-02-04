@@ -44,3 +44,8 @@ Feature: Automated creation of a whitelist file that is added to a repository. T
     Given we have a known github repository with secrets
     When  trufflehog scans the repo in pipeline mode
     Then  the exit code should be 0
+
+  Scenario: Trufflehog can find a particular commit in it's own repo
+    Given we have a known github repository with secrets
+    When trufflehog scans the repo (commit mode)
+    Then trufflehog finds all secrets
