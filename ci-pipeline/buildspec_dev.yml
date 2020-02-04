@@ -8,8 +8,7 @@
           "python3 -m pip install --upgrade twine",
           "pip install -r requirements.txt",
           "git config --global user.email josh.crane@mechanicalrock.io",
-          "git config --global user.name JoshCrane",
-          "export PYTHONPATH=PYTHONPATH:$(dirname `pwd`)"
+          "git config --global user.name JoshCrane"
         },
     "build": {
       "commands": [
