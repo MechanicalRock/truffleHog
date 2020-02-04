@@ -15,6 +15,7 @@ MockedWhitelistUnacknowledged = [
 ]
 
 MockedWhitelistAcknowledged = WhitelistEntry(
+    classification="FALSE_POSITIVE",
     commit="fixing unicode commit message problem",
     commitAuthor="flower@flowers-MacBook-Pro.local",
     commitHash="7147cc7525c27d459152548e3284e03a73688907",
@@ -25,5 +26,4 @@ MockedWhitelistAcknowledged = WhitelistEntry(
     secretGuid="5beef298005122c34d8bab7abd1ef842",
     stringDetected="1234567890abcdefABCDEF",
 )
-MockedWhitelistAcknowledged.acknowledged = True
 MockedWhitelistAcknowledged = [MockedWhitelistAcknowledged]

@@ -7,17 +7,23 @@ from itertools import groupby
 from collections import Counter
 from termcolor import colored
 import colorama
+from enum import Enum
 
 colorama.init()
 
-
+class Classifications:
+    valid = [
+        "FALSE_POSITIVE",
+        "REMEDIATED"
+    ]
+    
 class ScanResults:
     def __init__(self, **kwargs):
         self.possible_secrets = set()
         self.known_secrets = {
             result
             for result in self.read_whitelist_from_disk()
-            if result.acknowledged == True
+            if result.is_acknowledged() == True
         }
         self.reconciled_results = set()
 
@@ -27,11 +33,11 @@ class ScanResults:
                 results = jsons.dump(
                     sorted(
                         self.reconciled_results,
-                        key=lambda whitelist: whitelist.acknowledged,
-                        reverse=False,
+                        key=lambda whitelist: whitelist.classification,
+                        reverse=True,
                     )
                 )
-                json.dump(results, whitelist)
+                json.dump(results, whitelist, indent=4)
         except Exception as e:
             print(f"Unable to write to whitelist: {e}", file=sys.stderr)
 
@@ -55,9 +61,6 @@ class ScanResults:
         if self.possible_secrets == None:
             self.possible_secrets = set()
 
-    def _return_secret_by_status(status):
-        return {secret for secret in reconconcied}
-
 
 class WhitelistEntry:
     def __init__(
@@ -72,6 +75,7 @@ class WhitelistEntry:
         acknowledged=False,
         secretGuid=None,
         confidence="High",
+        classification="UNCLASSIFIED"
     ):
         self.commit = commit
         self.commitAuthor = commitAuthor
@@ -80,7 +84,8 @@ class WhitelistEntry:
         self.path = path
         self.reason = reason
         self.stringDetected = stringDetected.lstrip("+-")
-        self.acknowledged = acknowledged
+        
+
 
         self.secretGuid = secretGuid
         if secretGuid == None:
@@ -92,6 +97,21 @@ class WhitelistEntry:
         self.confidence = confidence
         if self.reason == "High Entropy":
             self.confidence = "Low"
+        
+        self.classification = WhitelistEntry.classify(classification)
+
+    
+    @staticmethod
+    def classify(string):
+        if string in Classifications.valid:
+            return string
+        else:
+            return "UNCLASSIFIED"
+    
+    def is_acknowledged(self):
+        if self.classification in Classifications.valid:
+            return True
+        return False
 
     def __repr__(self):
         return f"Secret Instance GUID: {self.secretGuid}, String Detected:{self.stringDetected}"
@@ -106,7 +126,7 @@ class WhitelistEntry:
 class WhitelistStatistics:
     def __init__(self, whitelist_object, pipeline_mode):
         self.whitelist_object = {
-            entry for entry in whitelist_object if entry.acknowledged == False
+            entry for entry in whitelist_object if not entry.is_acknowledged()
         }
 
         self.pipeline_mode = pipeline_mode
@@ -191,7 +211,7 @@ def remediate_secrets():
             [
                 entry.stringDetected
                 for entry in in_memory_whitelist
-                if entry.acknowledged == False
+                if entry.is_acknowledged() == False
             ]
         )
         for secret in counter:
@@ -216,4 +236,4 @@ def user_classify_secrets(secret):
 def update_secret(secret, classification, whitelist):
     for entry in whitelist:
         if entry.stringDetected == secret:
-            entry.acknowledged = classification
+            entry.classification = classification

@@ -196,3 +196,19 @@ def step_impl(context):
     context.repository = test_repos["false_and_true_positives_in_commit_history"][1]
     context.args = None
     context.command = None
+
+@when("trufflehog scans the repo (commit mode)")
+def step_impl(context):
+    args = Namespace()
+    args.repo_path = context.repository
+    args.commit = "739091d4e73973c556461b7bfe3a576e0df086fa"
+    args.pipeline_mode = False
+    context.args = args
+    context.command = console_mode
+
+
+@then("trufflehog finds all secrets")
+def step_impl(context):
+    wls = context.command(context.args)
+    entries = {entry for entry in wls.whitelist_object if entry.commitHash == "739091d4e73973c556461b7bfe3a576e0df086fa"}
+    assert len(entries) == 6
