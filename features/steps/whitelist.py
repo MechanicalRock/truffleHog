@@ -83,9 +83,7 @@ def step_impl(context):
 def step_impl(context):
     wls = context.command(context.args)
     assert wls.whitelist_object != set()
-    assert ("AKIATHISIS666REALKEY" and "AKIATHISISNOTREALKEY") in str(
-        wls.top_secrets()
-    )
+    assert ("AKIATHISIS666REALKEY" and "AKIATHISISNOTREALKEY") in str(wls.top_secrets())
 
 
 @then("Trufflehog should add a record for the new secret")
@@ -113,7 +111,11 @@ def step_impl(context):
 @then("Trufflehog should not include it in the scan result")
 def step_impl(context):
     wls = context.command(context.args)
-    entry_should_not_exist = {entry for entry in wls.whitelist_object if entry.secretGuid == "c9a657848360992b5d32ab0cd6f8702642b81636"}
+    entry_should_not_exist = {
+        entry
+        for entry in wls.whitelist_object
+        if entry.secretGuid == "c9a657848360992b5d32ab0cd6f8702642b81636"
+    }
     assert entry_should_not_exist == set()
 
 
@@ -133,6 +135,7 @@ def step_impl(context):
         )
     }
 
+
 # Trufflehog exit code is 0 on finding only acknowledged/whitelisted secrets.
 
 
@@ -140,7 +143,9 @@ def step_impl(context):
     "Trufflehog has found secrets, but they're all on the whitelist and acknowledged"
 )
 def step_impl(context):
-    context.repository = test_repos["false_and_true_positives_in_current_commit_all_ack"][1]
+    context.repository = test_repos[
+        "false_and_true_positives_in_current_commit_all_ack"
+    ][1]
 
 
 @given("Trufflehog has found secrets, they are on the whitelist but not acknowledged")
@@ -180,7 +185,6 @@ def step_impl(context):
     args.pipeline_mode = False
     context.args = args
     context.command = console_mode
-    
 
 
 @given("Theres a secret in the repo, and it's not in the whitelist")
@@ -197,6 +201,7 @@ def step_impl(context):
     context.args = None
     context.command = None
 
+
 @when("trufflehog scans the repo (commit mode)")
 def step_impl(context):
     args = Namespace()
@@ -210,5 +215,9 @@ def step_impl(context):
 @then("trufflehog finds all secrets")
 def step_impl(context):
     wls = context.command(context.args)
-    entries = {entry for entry in wls.whitelist_object if entry.commitHash == "739091d4e73973c556461b7bfe3a576e0df086fa"}
+    entries = {
+        entry
+        for entry in wls.whitelist_object
+        if entry.commitHash == "739091d4e73973c556461b7bfe3a576e0df086fa"
+    }
     assert len(entries) == 6

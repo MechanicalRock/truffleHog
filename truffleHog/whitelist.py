@@ -11,28 +11,38 @@ from enum import Enum
 
 colorama.init()
 
+
 class Classifications:
-    valid = [
-        "FALSE_POSITIVE",
-        "REMEDIATED"
-    ]
-    
+    valid = ["FALSE_POSITIVE", "REMEDIATED"]
+
+
+
+
 class ScanResults:
     def __init__(self, **kwargs):
         self.possible_secrets = set()
         self.known_secrets = {
             result
-            for result in self.read_whitelist_from_disk()
+            for result in ScanResults.read_whitelist_from_disk()
             if result.is_acknowledged() == True
         }
         self.reconciled_results = set()
 
-    def write_whitelist_to_disk(self):
+    def reconcile_secrets(self):
+        self.reconciled_results = self.known_secrets.union(self.possible_secrets)
+        self.possible_secrets = self.possible_secrets.difference_update(
+            self.known_secrets
+        )
+        if self.possible_secrets == None:
+            self.possible_secrets = set()
+
+    @staticmethod
+    def write_whitelist_to_disk(scan_results):
         try:
             with open("whitelist.json", "w+") as whitelist:
                 results = jsons.dump(
                     sorted(
-                        self.reconciled_results,
+                        scan_results,
                         key=lambda whitelist: whitelist.classification,
                         reverse=True,
                     )
@@ -41,7 +51,8 @@ class ScanResults:
         except Exception as e:
             print(f"Unable to write to whitelist: {e}", file=sys.stderr)
 
-    def read_whitelist_from_disk(self):
+    @staticmethod
+    def read_whitelist_from_disk():
         try:
             with open("whitelist.json", "r") as whitelist:
                 file_contents = json.load(whitelist)
@@ -52,14 +63,6 @@ class ScanResults:
         except Exception as e:
             print(f"Whitelist not found: {e}", file=sys.stderr)
             return set()
-
-    def reconcile_secrets(self):
-        self.reconciled_results = self.known_secrets.union(self.possible_secrets)
-        self.possible_secrets = self.possible_secrets.difference_update(
-            self.known_secrets
-        )
-        if self.possible_secrets == None:
-            self.possible_secrets = set()
 
 
 class WhitelistEntry:
@@ -75,7 +78,7 @@ class WhitelistEntry:
         acknowledged=False,
         secretGuid=None,
         confidence="High",
-        classification="UNCLASSIFIED"
+        classification="UNCLASSIFIED",
     ):
         self.commit = commit
         self.commitAuthor = commitAuthor
@@ -84,8 +87,6 @@ class WhitelistEntry:
         self.path = path
         self.reason = reason
         self.stringDetected = stringDetected.lstrip("+-")
-        
-
 
         self.secretGuid = secretGuid
         if secretGuid == None:
@@ -97,17 +98,16 @@ class WhitelistEntry:
         self.confidence = confidence
         if self.reason == "High Entropy":
             self.confidence = "Low"
-        
+
         self.classification = WhitelistEntry.classify(classification)
 
-    
     @staticmethod
     def classify(string):
         if string in Classifications.valid:
             return string
         else:
             return "UNCLASSIFIED"
-    
+
     def is_acknowledged(self):
         if self.classification in Classifications.valid:
             return True
@@ -204,36 +204,56 @@ class WhitelistStatistics:
         return message
 
 
-def remediate_secrets():
-    in_memory_whitelist = read_whitelist_to_memory()
-    if in_memory_whitelist:
-        counter = Counter(
-            [
-                entry.stringDetected
-                for entry in in_memory_whitelist
-                if entry.is_acknowledged() == False
-            ]
-        )
-        for secret in counter:
-            classification = user_classify_secrets(secret)
-            update_secret(secret, classification, in_memory_whitelist)
-        write_whitelist_to_disk(in_memory_whitelist)
+class Remediation:
+    @staticmethod
+    def remediate_secrets():
+        print(colored(f"Valid Classifications: (U)nclassified, (R)emediated, (F)alse Positive.", "green"))
+        print(colored(f"(F)alse Positives: the category for items that are definitely not secrets.", "green"))
+        print(colored(f"(R)emediated: the category for items are actually secrets and have been actioned appropriately.", "green"))
+        print(colored(f"(U)ncategoried: the category for any outstanding item awaiting classification or action.", "green"))
+        input("Press Any Key > ")
+        scan = ScanResults()
+        in_memory_whitelist = scan.read_whitelist_from_disk()
 
-    sys.exit(0)
+        if in_memory_whitelist:
+            counter = Counter(
+                [
+                    (entry.stringDetected, entry.commitHash)
+                    for entry in in_memory_whitelist
+                    if entry.is_acknowledged() == False
+                ]
+            )
+            for secret in counter:
+                classification = Remediation.user_classify_secrets(*secret)
+                if classification == 'break':
+                    break
+                Remediation.update_secret(secret[0], classification, in_memory_whitelist)
 
+            ScanResults.write_whitelist_to_disk(in_memory_whitelist)
 
-def user_classify_secrets(secret):
-    secret = colored(secret, "yellow")
-    while True:
-        print()
-        prompt = input(f"{secret}: False Positive? (y/n)> ")
-        if prompt == "y":
-            return True
-        if prompt == "n":
-            return False
+    @staticmethod
+    def user_classify_secrets(secret, commitHash):
+        secret = colored(secret, "yellow")
+        commitHash = colored(commitHash, "yellow")
 
+        while True:
+            print()
+            print(f"String Detected={secret} in SHA:{commitHash}:")
+            print(colored(f"Valid Classifications: (U)nclassified, (R)emediated, (F)alse Positive. (S)top.", "green"))
+            prompt = input(
+                f""
+            )
+            if prompt in "uU":
+                return "UNCLASSIFIED"
+            if prompt in "rR":
+                return "REMEDIATED"
+            if prompt in "fF":
+                return "FALSE_POSITIVE"
+            if prompt in "sS":
+                return "break"
 
-def update_secret(secret, classification, whitelist):
-    for entry in whitelist:
-        if entry.stringDetected == secret:
-            entry.classification = classification
+    @staticmethod
+    def update_secret(secret, classification, whitelist):
+        for entry in whitelist:
+            if entry.stringDetected == secret:
+                entry.classification = classification

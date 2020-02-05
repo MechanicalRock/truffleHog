@@ -13,7 +13,7 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import WhitelistEntry, WhitelistStatistics, ScanResults
+from truffleHog.whitelist import WhitelistEntry, WhitelistStatistics, ScanResults, Remediation
 from termcolor import colored
 
 import colorama
@@ -240,7 +240,7 @@ def console_mode(args):
     scan.reconcile_secrets()
     wls = WhitelistStatistics(scan.reconciled_results, args.pipeline_mode)
     print(colored(wls, "green"))
-    scan.write_whitelist_to_disk()
+    scan.write_whitelist_to_disk(scan.reconciled_results)
 
     return wls
 
@@ -308,7 +308,8 @@ def main(*args, **kwargs):
     args = parser.parse_args()
 
     if args.remediate:
-        remediate_secrets()
+        Remediation.remediate_secrets()
+        sys.exit(0)
 
     if args.pipeline_mode:
         pipeline_mode(args)

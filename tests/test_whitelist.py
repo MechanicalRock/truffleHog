@@ -66,7 +66,7 @@ class TestStringMethods(unittest.TestCase):
         scan.known_secrets = set()
         scan.possible_secrets = set(whitelist_object())
         scan.reconcile_secrets()
-        scan.write_whitelist_to_disk()
+        scan.write_whitelist_to_disk(scan.reconciled_results)
         assert len(scan.read_whitelist_from_disk()) == 2
         assert len({secret for secret in scan.reconciled_results if secret.is_acknowledged() == True}) == 0
         assert len({secret for secret in scan.reconciled_results if secret.is_acknowledged() == False}) == 2
@@ -89,7 +89,7 @@ class TestStringMethods(unittest.TestCase):
             )
         scan.known_secrets = set([wle])
         scan.reconcile_secrets()
-        scan.write_whitelist_to_disk()
+        scan.write_whitelist_to_disk(scan.reconciled_results)
         assert len(scan.read_whitelist_from_disk()) == 2
         assert scan.possible_secrets == set()
         assert len(scan.reconciled_results) == 2
