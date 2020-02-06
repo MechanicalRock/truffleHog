@@ -51,7 +51,7 @@ def _get_repo(repo_path):
     except Exception as e:
         print(
             colored(
-                f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
+                f"Unable to find a git repository. Are you sure {os.getcwd()} is a valid git repository?",
                 "red",
             ),
             file=sys.stderr,
@@ -63,7 +63,7 @@ def _get_repo(repo_path):
     except ValueError as e:
         print(
             colored(
-                f"Can't operate on this repository. Is it a non-empty git repository? {e}.",
+                f"Can't operate on this repository. Is {os.getcwd()} it a non-empty git repository?",
                 "red",
             ),
             file=sys.stderr,
