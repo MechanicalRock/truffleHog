@@ -85,7 +85,7 @@ class TestStringMethods(unittest.TestCase):
         subprocess.run(["git", "init"], cwd=tempdir, capture_output=True)
         results = subprocess.run(["mechtrufflehog"], cwd=tempdir, capture_output=True)
         assert results.returncode == 1
-        assert "Is it a non-empty git repository?" in str(results.stderr)
+        assert "a non-empty git repository?" in str(results.stderr)
  
 
     def test_get_repo_on_non_git_repo(self):
