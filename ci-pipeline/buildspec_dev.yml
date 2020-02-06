@@ -13,11 +13,11 @@
         },
     "build": {
       "commands": [
+        "pip3 install --upgrade pip",
+        "pip3 install .",
         "behave",
         "pytest",
         "python3 setup.py build",
-        "pip3 install --upgrade pip",
-        "pip3 install .",
         "pip3 show mechtrufflehog",
         "/usr/local/bin/trufflehog --git_url https://github.com/MechanicalRock/truffleHog || :",
         "python3 setup.py sdist bdist_wheel",
