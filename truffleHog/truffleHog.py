@@ -44,9 +44,19 @@ def _exclusion_filter(path):
 
 def _get_repo(repo_path):
     try:
-        repo = Repo(repo_path)
-    except:
-        repo = Repo(_clone_git_repo(repo_path))
+        try:
+            repo = Repo(repo_path)
+        except:
+            repo = Repo(_clone_git_repo(repo_path))
+    except Exception as e:
+        print(
+            colored(
+                f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
+                "red",
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
     try:
         repo.iter_commits()
         return repo
@@ -60,15 +70,7 @@ def _get_repo(repo_path):
         )
         sys.exit(1)
 
-    except Exception as e:
-        print(
-            colored(
-                f"Unable to find a git repository. Are you sure {e} is a valid git repository?",
-                "red",
-            ),
-            file=sys.stderr,
-        )
-        sys.exit(1)
+
 
 
 def _clone_git_repo(git_url):

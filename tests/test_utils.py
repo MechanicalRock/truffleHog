@@ -5,6 +5,8 @@ import json
 import io
 import re
 import argparse
+import tempfile
+import subprocess
 from collections import namedtuple
 from unittest.mock import patch, MagicMock
 from truffleHog.truffleHog import (
@@ -77,6 +79,21 @@ class TestStringMethods(unittest.TestCase):
         find_strings(repo_path="test/path/")
         rmtree_mock.assert_not_called()
         _clone_git_repo.assert_not_called()
+
+    def test_get_repo_on_empty_git_repo(self):
+        tempdir = tempfile.mkdtemp()
+        subprocess.run(["git", "init"], cwd=tempdir, capture_output=True)
+        results = subprocess.run(["mechtrufflehog"], cwd=tempdir, capture_output=True)
+        assert results.returncode == 1
+        assert "Is it a non-empty git repository?" in str(results.stderr)
+ 
+
+    def test_get_repo_on_non_git_repo(self):
+        tempdir = tempfile.mkdtemp()
+        results = subprocess.run("mechtrufflehog", cwd=tempdir, capture_output=True)
+        assert results.returncode == 1
+        assert "Unable to find a git repository." in str(results.stderr)
+
 
 
 if __name__ == "__main__":
