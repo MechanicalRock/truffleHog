@@ -314,7 +314,7 @@ def main(*args, **kwargs):
         sys.exit(0)
 
     if args.pipeline_mode:
-        pipeline_mode(args)
+        wls = pipeline_mode(args)
         exit_code(wls.whitelist_object, pipeline_mode=True)
 
     if not args.pipeline_mode:
