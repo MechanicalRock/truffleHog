@@ -1,6 +1,6 @@
 [
     {
-        "classification": "UNCLASSIFIED",
+        "classification": "FALSE_POSITIVE",
         "commit": "fixing unicode commit message problem",
         "commitAuthor": "flower@flowers-MacBook-Pro.local",
         "commitHash": "7147cc7525c27d459152548e3284e03a73688907",
@@ -12,7 +12,7 @@
         "stringDetected": "1234567890abcdefABCDEF"
     },
     {
-        "classification": "FALSE_POSITIVE",
+        "classification": "UNCLASSIFIED",
         "commit": "fixing unicode commit message problem",
         "commitAuthor": "flower@flowers-MacBook-Pro.local",
         "commitHash": "7147cc7525c27d459152548e3284e03a73688907",
