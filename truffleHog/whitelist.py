@@ -87,6 +87,8 @@ class WhitelistEntry:
         self.path = path
         self.reason = reason
         self.stringDetected = stringDetected.lstrip("+-")
+        if len(stringDetected) > 500:
+            self.stringDetected = stringDetected.lstrip("+-")[:500]+"..."
 
         self.secretGuid = secretGuid
         if secretGuid == None:
@@ -257,3 +259,4 @@ class Remediation:
         for entry in whitelist:
             if entry.stringDetected == secret:
                 entry.classification = classification
+
