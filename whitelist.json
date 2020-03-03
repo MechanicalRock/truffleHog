@@ -312,7 +312,7 @@
         "stringDetected": "5beef298005122c34d8bab7abd1ef842"
     },
     {
-        "classification": "FALSE_POSITIVE",
+        "classification": "REMEDIATED",
         "commit": "fake ssh key",
         "commitAuthor": "josh.crane@mechanicalrock.io",
         "commitHash": "4fc1c71c5076abac24cf21af4e3520941c6e8220",
@@ -324,7 +324,7 @@
         "stringDetected": "/RVtBep2HTcqVCnlKTSh0Sl/dlDUjkuRQhhFjillZkQUBUZ0Yx8OZD/6GHWxabQI"
     },
     {
-        "classification": "FALSE_POSITIVE",
+        "classification": "UNCLASSIFIED",
         "commit": "Made a pip uploadable package out of truffleHog",
         "commitAuthor": "kepoorh@gmail.com",
         "commitHash": "25621e941c2d209618d5097387881b96f4160014",
