@@ -13,7 +13,7 @@ import re
 import stat
 from git import Repo
 from git import NULL_TREE
-from truffleHog.whitelist import WhitelistEntry, WhitelistStatistics, ScanResults, Remediation
+from truffleHog.whitelist import WhitelistEntry, WhitelistStatistics, ScanResults, Remediation, MetricCalculation
 from termcolor import colored
 
 import colorama
@@ -207,7 +207,6 @@ def scan_commit(commit, repo):
 
     return commit_results
 
-
 def find_strings(repo_path, commit=None):
     output = set()
     repo = _get_repo(repo_path)
@@ -295,6 +294,7 @@ def main(*args, **kwargs):
         "--repo_path", type=str, default=".", help="File path to git project "
     )
     parser.add_argument("--commit", type=str, help="Commit SHA of git commit to scan")
+    parser.add_argument("--metrics", help="calculates a metric for the given commit", action="store_true")
     parser.add_argument(
         "--remediate",
         help="Interactive mode for reconciling secrets",
@@ -308,6 +308,17 @@ def main(*args, **kwargs):
     )
 
     args = parser.parse_args()
+
+    if args.metrics and args.commit:
+        try:
+            repo = _get_repo(args.repo_path)
+        except Exception as e:
+            print(e)
+        try:
+            MetricCalculation.dump_json(args.commit, repo)
+        except Exception as e:
+            print(e)
+        sys.exit(0)
 
     if args.remediate:
         Remediation.remediate_secrets()

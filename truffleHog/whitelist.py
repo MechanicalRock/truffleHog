@@ -260,3 +260,56 @@ class Remediation:
             if entry.stringDetected == secret:
                 entry.classification = classification
 
+class MetricCalculation:
+    @staticmethod
+    def find_divergent_results(commitSha, repo):
+        divergent_results = set()
+        current = repo.commit(commitSha)
+        previous = current.parents[0]
+
+        current_whitelist = MetricCalculation.load_in_memory_whitelist(current.hexsha, repo)
+        previous_whitelist = MetricCalculation.load_in_memory_whitelist(previous.hexsha, repo)
+
+        for i in current_whitelist:
+            for j in previous_whitelist:
+                if i == j and i.classification != j.classification:
+                    divergent_results.add(i)
+        return divergent_results
+
+    @staticmethod
+    def load_in_memory_whitelist(commitSha, repo):
+        entries = set()
+        whitelist_repr = ""
+        for commit,lines in repo.blame(commitSha, "whitelist.json"):
+            for entry in lines:
+                whitelist_repr += entry
+
+        whitelist_object = json.loads(whitelist_repr)
+        for entry in whitelist_object:
+            entries.add(WhitelistEntry(**entry))
+        return entries
+
+    @staticmethod
+    def validate(commitSha, repo, whitelist_entry):
+        commit = repo.commit(whitelist_entry.commitHash)
+        committed_date = datetime.datetime.utcfromtimestamp(commit.committed_date)
+        committed_date = committed_date.strftime("%Y-%m-%dT%H:%M:%S") + committed_date.strftime(".%f")[:4] + "Z"
+        return commit.committer.email, committed_date
+
+    @staticmethod
+    def secret_acknowledgement(whitelist_entry, committer, commited_date):
+        return {
+            "ackAuthor": committer,
+            "ackDate": commited_date,
+            "secretGuid": whitelist_entry.secretGuid,
+            "classification": whitelist_entry.classification,
+            "path": whitelist_entry.path
+        }
+    @staticmethod
+    def dump_json(commitSha, repo):
+        for result in MetricCalculation.find_divergent_results(commitSha, repo):
+            committer, committed_date = MetricCalculation.validate(result.commit, repo, result)
+            with open(f"{result.secretGuid}.json", 'w+') as file:
+                json.dump(MetricCalculation.secret_acknowledgement(result, committer, committed_date), file)
+
+

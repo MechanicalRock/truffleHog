@@ -128,3 +128,6 @@ class TestStringMethods(unittest.TestCase):
         assert type(wls.to_dict()) == dict
         assert wls.to_dict()["Total Strings"] == 2
         assert wls.to_dict()["Unique Strings"] == 1
+
+    def test_metric_calculation(self):
+        raise Exception("Not yet implimented.")
