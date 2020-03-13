@@ -3,6 +3,6 @@
     "Source": "webhook",
     "EventBusName": "webhooks",
     "DetailType": "webhook",
-    "Detail": "webhook"
+    "Detail": "{ \"key1\": \"value3\", \"key2\": \"value4\" }"
   }
 ]
