@@ -30,6 +30,6 @@ jobs:
         aws-region: ap-southeast-2 
         
     - name: Run a one-line script
-      run: aws events put-events --entries file://events/putevents.json
+      run: aws events put-events --entries file://.github/workflows/webhook_event.json
 
   
