@@ -97,12 +97,12 @@ class TestStringMethods(unittest.TestCase):
         assert "Unable to find a git repository." in str(results.stderr)
 
     
-    def test_metric_calculation(self):
-        repo = _get_repo(".")
-        MetricCalculation.dump_json("2c46bb152561ebb1e162ecb10ea4ec69d82e00e6", repo)
-        with open("0ff89138f4d19efe921a1b1366a25a35.json", "r") as file:
-            line = file.readline().replace("\'", "\"")
-            assert line == '{"ackAuthor": "kepoorh@gmail.com", "ackDate": "2017-01-10T04:09:55.000Z", "secretGuid": "0ff89138f4d19efe921a1b1366a25a35", "classification": "UNCLASSIFIED", "path": "truffleHog/truffleHog.py"}'
+    # def test_metric_calculation(self):
+    #     repo = _get_repo(".")
+    #     MetricCalculation.dump_json("2c46bb152561ebb1e162ecb10ea4ec69d82e00e6", repo)
+    #     with open("0ff89138f4d19efe921a1b1366a25a35.json", "r") as file:
+    #         line = file.readline().replace("\'", "\"")
+    #         assert line == '{"ackAuthor": "kepoorh@gmail.com", "ackDate": "2017-01-10T04:09:55.000Z", "secretGuid": "0ff89138f4d19efe921a1b1366a25a35", "classification": "UNCLASSIFIED", "path": "truffleHog/truffleHog.py"}'
 
 if __name__ == "__main__":
     unittest.main()
