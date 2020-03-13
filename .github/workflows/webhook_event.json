@@ -1,6 +1,7 @@
 [
   {
     "Source": "webhook",
-    "EventBusName": "webhooks"
+    "EventBusName": "webhooks",
+    "DetailType": "webhook"
   }
 ]
