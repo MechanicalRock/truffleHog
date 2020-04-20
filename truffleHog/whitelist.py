@@ -60,6 +60,9 @@ class ScanResults:
                 for entry in file_contents:
                     known_secrets.add(WhitelistEntry(**entry))
                 return known_secrets
+        except FileNotFoundError as e:
+            print(f"Whitelist not found. Creating new whitelist.", file=sys.stderr)
+            return set()
         except Exception as e:
             print(f"Whitelist not found: {e}", file=sys.stderr)
             return set()
